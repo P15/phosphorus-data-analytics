@@ -102,11 +102,12 @@ def update_db_with_hs(prod=False):
         
 
 ############################################################
-def pd2gs(wkbook,sheet,df):
-    print("pushing {} reports to {} sheet of {}".format(len(df),sheet,wkbook))
+def pd2gs(wkbook,sheet,df,clear=True):
+    print("pushing {} rows, {} columns, to {} sheet of {}".format(len(df),len(df.columns),sheet,wkbook))
     gc = gspread.service_account(filename=os.environ["service_account_cred"])
     ws = gc.open(wkbook).worksheet(sheet)
-    ws.clear()
+    if clear:
+        ws.clear()
     gd.set_with_dataframe(ws, df)
 
 ###########################################################
