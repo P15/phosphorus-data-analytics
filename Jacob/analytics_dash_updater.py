@@ -35,12 +35,15 @@ def reports_from_db():
              e.created_at AS event_log_timestamp, 
              e.event_type,
              s.received_at AS sample_recieved_at,
+             s.collection_date,
              date_trunc('hour',r.created_at) AS create_hour,
              date_trunc('hour',r.start_date) AS start_hour,
-             r.sent_date-r.start_date AS timedelta,
+             r.sent_date-s.received_at AS timedelta,
              u.username,
              to_char(r.sent_date, 'MM/DD/YYY') AS sent_day,
              to_char(r.start_date, 'MM/DD/YYY') AS start_day,
+             to_char(r.sent_date,  'HH24:MI') AS sent_time,
+             to_char(r.start_date, 'HH24:MI') AS start_time,
              to_char(s.received_at, 'MM/DD/YYY') AS recieve_day,
              to_char(e.created_at, 'MM/DD/YYY') AS event_day
              
@@ -85,9 +88,6 @@ def TATdash(reports):
 
     # Creates the columns necessary for the TAT dashboard. May move more of these into SQL query in the future.
     reports['TAT'] = [round(x.total_seconds()/3600,2) for x in reports.timedelta]
-    reports['start_day']=[datetime.strftime(x, "%m/%d/%Y") for x in reports.start_date]
-    reports['send_day']=[datetime.strftime(x, "%m/%d/%Y") for x in reports.sent_date]
-    reports['recieve_day']=[datetime.strftime(x, "%m/%d/%Y") for x in reports.sample_recieved_at]
     reports['weekday']=[x.day_name() for x in reports.start_date]
     reports['positive']=[int(x) for x in reports.result=="Positive"]
     reports['month']=[x.month_name() for x in reports.start_date]
@@ -97,6 +97,7 @@ def TATdash(reports):
     reports["72 Hours"]=72
     
 
+    
     # Sort and eliminate
     reports=reports.sort_values(by=["start_day"])
 
@@ -109,40 +110,54 @@ def TATdash(reports):
     reports['tracking_number']=reports.tracking_number.astype('float64').fillna(0).astype(np.int64).clip(lower=1000).replace({1000:None})
     
     
+
+    
+    # adds trackers
+    reports=add_trackers_to_reports(reports)
+    
+    #Creates a goal of 24 hours for STAT reports, else 72 hours
+    reports.loc[reports.expedited,"goal"]=24
+    reports["goal"]=reports.goal.fillna(72)
+    
+    #If TAT is less than the goal, goal_missed is zero, else 1
+    reports.loc[reports.TAT<reports.goal,"goal_missed"]=0
+    reports["goal_missed"]=reports.goal_missed.fillna(1)
+    
     new_order=['id',
-               'start_date',
-               'sent_date',
-               'status',
-               'is_cancelled',
+               'delivery_datetime',
+               "collection_date",
+               "sample_recieved_at",
+               'start_day',
+               'sent_day',
+               'start_time',
+               'sent_time',
+               'weekday',
+               'TAT',
+               'goal',
+               'goal_missed',
                'expedited',
                'result',
                'clinic',
                'distributor',
                'redraw',
                'timedelta',
-               'TAT',
-               'start_day',
-               'send_day',
-               'Average Turnaround',
-               '72 Hours',
                'test',
                'tracking_number',
                'start_date_type',
-               'weekday',
                'positive',
-               'month']
+               'month',
+               'public_url',
+               'picked_up_city',
+               'picked_up_state']
     
     reports=reports[new_order]
-    
-    # adds trackers
-    reports=add_trackers_to_reports(reports)
     
     # Uploads to google sheets
     utils.pd2gs("COVID-19 - All Distributors TAT Dashboard","Data",reports)
     
     # Upload albertsons reports to albertsons-specific document
-    albertsonsreports=reports[reports.distributor=="Albertsons"]
-    utils.pd2gs("Albertsons COVID TAT Dashboard","Data",albertsonsreports)
+    IRMSreports=reports[reports.clinic=="IRMS"]
+    #utils.pd2gs("IRMS COVID-19 TAT Dashboard","Data",IRMSreports)
     
     return reports
 
@@ -152,6 +167,7 @@ def add_trackers_to_reports(reports):
     old_trackers=pd.read_sql_query("select * from easypost_trackers",engine)
 
     seen_codes=set(reports.tracking_number).intersection(set(old_trackers.tracking_number)) 
+    
     
     trackers_to_create=reports.tracking_number[~reports.tracking_number.isin(seen_codes)].dropna()
     
@@ -267,13 +283,10 @@ def positives(reports):
     # Updates positives dashboards
     new_order=['id',
                'start_day',
-               'send_day',
-               'status',
-               'is_cancelled',
+               'sent_day',
                'expedited',
                'result',
                'redraw',
-               '72 Hours',
                'test',
                'weekday',
                'distributor',
@@ -290,7 +303,7 @@ if __name__=="__main__":
         rawreports=reports_from_db()
         
         # Updates events Report and doesn't return anything. REQUIRES rawreports
-        events_by_day(rawreports)
+        #events_by_day(rawreports)
         
         # Updates TAT dashboard for ALL and for ALBERTSONS using RAWREPORTS
         tatreports=TATdash(rawreports)
