@@ -59,7 +59,7 @@ def reports_from_db():
           
          WHERE
              r.start_date>= '{}'
-             AND (r.sent_date,r.start_date, r.result) IS NOT NULL
+             AND (r.sent_date,r.start_date) IS NOT NULL
 
 
          ;""".format(start_date)
@@ -67,12 +67,10 @@ def reports_from_db():
     return df
 
 
-def TATdash(reports):  
+def TATdash(reports,genomics=False):  
     print("preparing data for TAT dash...")
     
-    # Filters for only COVID tests
-    reports=reports[reports.test.str.contains("COVID")]
-    
+
     # redraw=TRUE if a report ever experienced the event "report_marked_redraw"
     redrawn_reports=reports[reports.event_type=="report_marked_redraw"]
     redrawn_report_ids=set(reports.id).intersection(set(redrawn_reports.id))
@@ -87,22 +85,35 @@ def TATdash(reports):
     
 
     # Creates the columns necessary for the TAT dashboard. May move more of these into SQL query in the future.
-    reports['TAT'] = [round(x.total_seconds()/3600,2) for x in reports.timedelta]
+
     reports['weekday']=[x.day_name() for x in reports.start_date]
-    reports['positive']=[int(x) for x in reports.result=="Positive"]
     reports['month']=[x.month_name() for x in reports.start_date]
     
     # These are used to create horizontal lines in the google sheets chart
     reports["Average Turnaround"]=mean(reports["TAT"])
-    reports["72 Hours"]=72
+
     
 
     
     # Sort and eliminate
     reports=reports.sort_values(by=["start_day"])
 
-    # Eliminate fringe cases
-    reports=reports[(reports.TAT>6) & (reports.TAT<200)]
+
+    # Filters for only COVID tests and eliminates fringe cases, plus adds columns unique to COVID
+    if genomics:
+        reports=reports[~reports.test.str.contains("COVID")]
+        reports=reports[reports.TAT<1500]
+        reports['TAT'] = [x.days for x in reports.timedelta]
+    else:
+        reports=reports[reports.test.str.contains("COVID")]
+        reports=reports[(reports.TAT>6) & (reports.TAT<200)]
+        reports["72 Hours"]=72
+        reports['positive']=[int(x) for x in reports.result=="Positive"]
+        #Creates a goal of 24 hours for STAT reports, else 72 hours
+        reports.loc[reports.expedited,"goal"]=24
+        reports["goal"]=reports.goal.fillna(72)
+        reports['TAT'] = [round(x.total_seconds()/3600,2) for x in reports.timedelta]
+    
     
     # Fixes some problems with the tracking number. Need to go back and review this...
     reports=reports[reports.tracking_number!="N/A"]
@@ -110,18 +121,15 @@ def TATdash(reports):
     reports['tracking_number']=reports.tracking_number.astype('float64').fillna(0).astype(np.int64).clip(lower=1000).replace({1000:None})
     
     
-
-    
     # adds trackers
-    reports=add_trackers_to_reports(reports)
+    if not genomics:
+        reports=add_trackers_to_reports(reports)
     
-    #Creates a goal of 24 hours for STAT reports, else 72 hours
-    reports.loc[reports.expedited,"goal"]=24
-    reports["goal"]=reports.goal.fillna(72)
-    
+    '''
     #If TAT is less than the goal, goal_missed is zero, else 1
     reports.loc[reports.TAT<reports.goal,"goal_missed"]=0
     reports["goal_missed"]=reports.goal_missed.fillna(1)
+    '''
     
     new_order=['id',
                'delivery_datetime',
@@ -150,14 +158,15 @@ def TATdash(reports):
                'picked_up_city',
                'picked_up_state']
     
-    reports=reports[new_order]
+    reports=reports.loc[:,reports.columns.isin(new_order)]
     
     # Uploads to google sheets
-    utils.pd2gs("COVID-19 - All Distributors TAT Dashboard","Data",reports)
-    
-    # Upload albertsons reports to albertsons-specific document
-    IRMSreports=reports[reports.clinic=="IRMS"]
-    #utils.pd2gs("IRMS COVID-19 TAT Dashboard","Data",IRMSreports)
+    if genomics:
+        utils.pd2gs("Genomics TAT","Data",reports)
+    else:
+        utils.pd2gs("COVID-19 - All Distributors TAT Dashboard","Data",reports)
+        IRMSreports=reports[reports.clinic=="IRMS"]
+        utils.pd2gs("IRMS COVID-19 TAT Dashboard","Data",IRMSreports)
     
     return reports
 
@@ -311,10 +320,11 @@ if __name__=="__main__":
         # Updates positives reports for and ALL. REQUIRES tatreports
         positives_reports=positives(tatreports)
         print("Succeeded at {}".format(datetime.now()))
+        input("Press enter to quit...")
         
     except Exception as e:
         print("Failed at {}".format(datetime.now()))
-        print(e)
+        print("With error: {}".format(e))
         input("Press enter to quit...")
 
 
