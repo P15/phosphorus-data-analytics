@@ -8,6 +8,7 @@ import easypost
 import csv
 from datetime import datetime
 from sqlalchemy import create_engine
+import numpy as np
 
 ###################HUBSPOT##############################
 
@@ -102,13 +103,31 @@ def update_db_with_hs(prod=False):
         
 
 ############################################################
-def pd2gs(wkbook,sheet,df,clear=True):
+def pd2gs(wkbook,sheet,df,clear=True,include_index=False):
     print("pushing {} rows, {} columns, to {} sheet of {}".format(len(df),len(df.columns),sheet,wkbook))
     gc = gspread.service_account(filename=os.environ["service_account_cred"])
     ws = gc.open(wkbook).worksheet(sheet)
     if clear:
         ws.clear()
-    gd.set_with_dataframe(ws, df)
+    gd.set_with_dataframe(ws, df, include_index=include_index)
+    
+    
+def UTC2EST(df):
+    timecols=df.select_dtypes(include=["datetime64[ns]"])
+    for col in timecols:
+        df[col]=df[col] \
+                .dt.tz_localize("UTC") \
+                .dt.tz_convert("EST") \
+                .dt.tz_localize(None)
+    return df
+
+
+def timedelta2time(df):
+    timecols=df.select_dtypes(include=["timedelta64[ns]"])
+    for col in timecols:
+        df[col]=[x.split(" ")[2].split(".")[0] if x != "NaT" else "" for x in df[col].astype(str)]
+    return df
+
 
 ###########################################################
 

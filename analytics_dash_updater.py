@@ -19,7 +19,7 @@ import re
 def reports_from_db():
     print("getting reports from db...")
     engine = create_engine(os.environ["PROD_FOLLOWER_DATABASE_URL"])
-    start_date=datetime(2020,11,1) #Plan to dynamically define start_date in the future
+    startdate=datetime(2020,12,1) #Plan to dynamically define start_date in the future
     
     # Creates a pandas dataframe of all reports and events.
     # Includes start hour and created hour as truncated dates.
@@ -35,17 +35,8 @@ def reports_from_db():
              e.created_at AS event_log_timestamp, 
              e.event_type,
              s.received_at AS sample_recieved_at,
-             s.collection_date,
-             date_trunc('hour',r.created_at) AS create_hour,
-             date_trunc('hour',r.start_date) AS start_hour,
-             r.sent_date-s.received_at AS timedelta,
-             u.username,
-             to_char(r.sent_date, 'MM/DD/YYY') AS sent_day,
-             to_char(r.start_date, 'MM/DD/YYY') AS start_day,
-             to_char(r.sent_date,  'HH24:MI') AS sent_time,
-             to_char(r.start_date, 'HH24:MI') AS start_time,
-             to_char(s.received_at, 'MM/DD/YYY') AS recieve_day,
-             to_char(e.created_at, 'MM/DD/YYY') AS event_day
+             s.collection_date
+             --u.username
              
              
          FROM reports r
@@ -55,15 +46,26 @@ def reports_from_db():
             JOIN kits k ON r.kit_id = k.id
             JOIN event_logs e ON r.id = e.report_id
             JOIN samples s ON s.kit_id=k.id
-            JOIN users u ON u.id=e.user_id
+            --JOIN users u ON u.id=e.user_id
           
          WHERE
              r.start_date>= '{}'
-             AND (r.sent_date,r.start_date) IS NOT NULL
+             AND (r.start_date) IS NOT NULL
 
 
-         ;""".format(start_date)
+         ;""".format(startdate)
     df=pd.read_sql_query(sql,engine)
+    df=utils.UTC2EST(df)
+    # Stupid quick fix for another problem. Need to fix this.
+    df["sent_day"] = [x.strftime("%m/%d/%Y") if x is not pd.NaT else pd.NaT for x in df.sent_date]
+    df["start_day"] = [x.strftime("%m/%d/%Y") if x is not pd.NaT else pd.NaT for x in df.start_date]
+    df["sent_time"] = [x.strftime("%H:%M:%S") if x is not pd.NaT else pd.NaT for x in df.sent_date]
+    df["start_time"] = [x.strftime("%H:%M:%S") if x is not pd.NaT else pd.NaT for x in df.start_date]
+    df["recieve_day"] = [x.strftime("%m/%d/%Y") if x is not pd.NaT else pd.NaT for x in df.sample_recieved_at]
+    df["event_day"] = [x.strftime("%m/%d/%Y") if x is not pd.NaT else pd.NaT for x in df.event_log_timestamp]
+    df["start_hour"] = [x.hour if x is not pd.NaT else pd.NaT for x in df.start_date]
+    df["create_hour"] = [x.hour if x is not pd.NaT else pd.NaT for x in df.created_at]
+    df["timedelta"] = df.sent_date-df.sample_recieved_at
     return df
 
 
@@ -79,6 +81,11 @@ def TATdash(reports,genomics=False):
     # Keeps only the last event per report. Keep last or first doesn't matter
     reports=reports.drop_duplicates(subset=["id"],keep="last")
     
+    
+
+    
+    
+    
     # start_date_type: sample_created if a patient was pre-registered, else report_created
     reports.loc[reports.create_hour==reports.start_hour, "start_date_type"]="report_created"
     reports["start_date_type"]=reports.start_date_type.fillna("sample_created")
@@ -88,9 +95,7 @@ def TATdash(reports,genomics=False):
 
     reports['weekday']=[x.day_name() for x in reports.start_date]
     reports['month']=[x.month_name() for x in reports.start_date]
-    
-    # These are used to create horizontal lines in the google sheets chart
-    reports["Average Turnaround"]=mean(reports["TAT"])
+
 
     
 
@@ -105,6 +110,7 @@ def TATdash(reports,genomics=False):
         reports=reports[reports.TAT<1500]
         reports['TAT'] = [x.days for x in reports.timedelta]
     else:
+        reports['TAT'] = [round(x.total_seconds()/3600,2) for x in reports.timedelta]
         reports=reports[reports.test.str.contains("COVID")]
         reports=reports[(reports.TAT>6) & (reports.TAT<200)]
         reports["72 Hours"]=72
@@ -112,7 +118,10 @@ def TATdash(reports,genomics=False):
         #Creates a goal of 24 hours for STAT reports, else 72 hours
         reports.loc[reports.expedited,"goal"]=24
         reports["goal"]=reports.goal.fillna(72)
-        reports['TAT'] = [round(x.total_seconds()/3600,2) for x in reports.timedelta]
+
+        
+    # These are used to create horizontal lines in the google sheets chart
+    reports["Average Turnaround"]=mean(reports["TAT"])
     
     
     # Fixes some problems with the tracking number. Need to go back and review this...
@@ -123,13 +132,11 @@ def TATdash(reports,genomics=False):
     
     # adds trackers
     if not genomics:
-        reports=add_trackers_to_reports(reports)
-    
-    '''
-    #If TAT is less than the goal, goal_missed is zero, else 1
-    reports.loc[reports.TAT<reports.goal,"goal_missed"]=0
-    reports["goal_missed"]=reports.goal_missed.fillna(1)
-    '''
+        #reports=add_trackers_to_reports(reports)
+        #If TAT is less than the goal, goal_missed is zero, else 1
+        reports.loc[reports.TAT<reports.goal,"goal_missed"]=0
+        reports["goal_missed"]=reports.goal_missed.fillna(1)
+
     
     new_order=['id',
                'delivery_datetime',
@@ -167,7 +174,10 @@ def TATdash(reports,genomics=False):
         utils.pd2gs("COVID-19 - All Distributors TAT Dashboard","Data",reports)
         IRMSreports=reports[reports.clinic=="IRMS"]
         utils.pd2gs("IRMS COVID-19 TAT Dashboard","Data",IRMSreports)
-    
+        albertsons=reports[reports.distributor=="Albertsons"]
+        utils.pd2gs("Albertsons TAT Dashboard","Data",albertsons)
+        readyhealth=reports[reports.distributor=="Ready Health"]
+        utils.pd2gs("ReadyHealth TAT Dashboard","Data",readyhealth)
     return reports
 
 def add_trackers_to_reports(reports):
@@ -223,21 +233,11 @@ def add_trackers_to_reports(reports):
 def events_by_day(reports):  
     print("doing events by day...")
     
-    # Clips dates
-    earliest_date=datetime(2020,10,1)
-    latest_date=datetime.now()
-    idx = np.where((reports.event_log_timestamp>earliest_date)&(reports.event_log_timestamp<=latest_date))
-    reports=reports.iloc[idx]
-    
     
     # Adds a column of 1s, and sorts
     reports["occurances"]=int(1)
     reports=reports.sort_values(by=["id","event_log_timestamp"])
     
-    # Aggregates events by user
-    reports["user"]=reports.username.str.split("@").str[0]
-    userevents=reports.groupby(["user","event_day","event_type"])["occurances"].sum().reset_index()
-    userevents_day=reports.groupby(["user","event_day"])["occurances"].sum().reset_index().pivot("event_day","user","occurances")
     
     # Filters for only COVID tests
     reports=reports[reports.test.str.contains("COVID")]
@@ -268,15 +268,15 @@ def events_by_day(reports):
     reports=reports.dropna(subset=["new_event_type"])
     
     #Some reports, by the above definitions, will have been sent twice or maybe cancelled twice. Here the duplicates are removed.
-    reports=reports.drop_duplicates(subset=["id","event_type"]).sort_values(by=["id","event_log_timestamp"])
+    reports=reports.drop_duplicates(subset=["id","new_event_type"]).sort_values(by=["id","event_log_timestamp"])
     
     #########################################################################################################################
     ###Not sure if the best way to present this data is by start date of report or by the day the event occurs. I do both.###
     #########################################################################################################################
     
     # Groups events by start day, event day and pivots so that each event is a column and days are rows. This allows the right kind of bar chart to be created in google sheets.
-    startevents=reports.groupby(["start_day",pd.Grouper(key="event_type")])[["occurances"]].sum().reset_index().pivot("start_day","event_type","occurances")
-    events=reports.groupby(["event_day",pd.Grouper(key="event_type")])[["occurances"]].sum().reset_index().pivot("event_day","event_type","occurances")
+    startevents=reports.groupby(["start_day",pd.Grouper(key="new_event_type")])[["occurances"]].sum().reset_index().pivot("start_day","new_event_type","occurances")
+    events=reports.groupby(["event_day",pd.Grouper(key="new_event_type")])[["occurances"]].sum().reset_index().pivot("event_day","new_event_type","occurances")
     
     # Merges both with the recievd column
     startevents=startevents.merge(recieved,left_index=True,right_on="recieve_day").reset_index()
@@ -285,8 +285,23 @@ def events_by_day(reports):
     # Pushes to google sheets
     utils.pd2gs("Events Report","Start Date",startevents)
     utils.pd2gs("Events Report","Event Date",events)
-    utils.pd2gs("Events Report","Events by User",userevents,clear=False)
-    utils.pd2gs("Events Report","Users",userevents_day)
+
+def time_in_stage(reports):
+        reports["Time in Stage"]=np.nan
+        for i in range(reports.shape[0] - 1):
+            reports['Time in Stage'][i] = reports['event_log_timestamp'][i+1] - reports['event_log_timestamp'][i]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
 def positives(reports):
     # Updates positives dashboards
@@ -312,10 +327,12 @@ if __name__=="__main__":
         rawreports=reports_from_db()
         
         # Updates events Report and doesn't return anything. REQUIRES rawreports
-        #events_by_day(rawreports)
+        events_by_day(rawreports)
         
-        # Updates TAT dashboard for ALL and for ALBERTSONS using RAWREPORTS
+        # Updates TAT dashboard for ALL using rawreports
         tatreports=TATdash(rawreports)
+        
+        #genomics=TATdash(rawreports,genomics=True)
 
         # Updates positives reports for and ALL. REQUIRES tatreports
         positives_reports=positives(tatreports)
