@@ -37,20 +37,24 @@ def tickets_from_db(startdate):
     df["day"]=[x.strftime("%m/%d/%Y") for x in df.created_at]
     return df
     
-def tickets_aggregations(startdate):
+def tickets_aggregations(startdate, for_data_entry=False):
     tickets=tickets_from_db(startdate)
 
     tickets_by_user=tickets.groupby(["day","fullname"]).sum()["tickets_created"]
     tickets_by_day=tickets.groupby(["day"]).sum()["tickets_created"]
     
     #time of day
-    tickets["avg_tickets_time"]=tickets["created_at"]-pd.to_datetime(tickets["day"])
     
-    tickets["avg_tickets_time"]=tickets["avg_tickets_time"].values.astype(np.int64)
-    
-    average_tickets_time_of_day=tickets.groupby(["day"]).mean()["avg_tickets_time"]
-    
-    average_tickets_time_of_day=pd.to_timedelta(average_tickets_time_of_day)
+    if for_data_entry:
+        pass
+    else:
+        tickets["avg_tickets_time"]=tickets["created_at"]-pd.to_datetime(tickets["day"])
+        
+        tickets["avg_tickets_time"]=tickets["avg_tickets_time"].values.astype(np.int64)
+        
+        average_tickets_time_of_day=tickets.groupby(["day"]).mean()["avg_tickets_time"]
+        
+        average_tickets_time_of_day=pd.to_timedelta(average_tickets_time_of_day)
     return average_tickets_time_of_day, tickets_by_day, tickets_by_user
 
 

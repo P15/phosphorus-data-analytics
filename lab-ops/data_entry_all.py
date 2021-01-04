@@ -10,7 +10,7 @@ Description:
 This script updates the Weekly Shift Reports located in GoogleDrive/Laboratory Operations/Management and Reporting/1. High-Level Oversight/Weekly Shift Reports
 at https://drive.google.com/drive/folders/1BHknNiOcpuTBLugkTfLbz8zrA32KZBDx?usp=sharing
 
-It requires three other scripts: accessions, scans, & tickets
+It requires three other scripts: entries, scans, & tickets
 
 The end result is two Pandas DataFrames, one of all activity per day, and the other of activity per user. These DataFrames are pushed to the spreadsheet.
 
@@ -22,13 +22,15 @@ sys.path.append(__location__ + '/../../')
 from common import utils
 import pandas as pd
 from datetime import datetime,timedelta
-import accessions
-import scans
+import entries
+import reviews
+import scans2kits
 import tickets
 
 
-if __name__=="__main__":
-    # Defines a DataFrame index with every day in the week so that days with zero activity are not missed
+
+def main():
+     # Defines a DataFrame index with every day in the week so that days with zero activity are not missed
     today = datetime.now().date()
     enddate = today + timedelta(days=6-today.weekday())
     startdate = today - timedelta(days=today.weekday())
@@ -36,17 +38,21 @@ if __name__=="__main__":
        
     
     # Calls aggregation functions from subscripts, which return three DataFrames in a specific order each.
-    average_accessions_time_of_day, accessions_by_day, accessions_by_user = accessions.accesssions_aggregations(startdate)
+    average_entries_time_of_day, entries_by_day, entries_by_user = entries.entries_aggregations(startdate)
     
-    average_tickets_time_of_day, tickets_by_day, tickets_by_user = tickets.tickets_aggregations(startdate)
+    average_tickets_time_of_day, tickets_by_day, tickets_by_user = tickets.tickets_aggregations(startdate,for_data_entry=False)
     
-    average_scans_time_of_day, scans_by_day, scans_by_user = scans.scans_aggregations(startdate)
+    average_reviews_time_of_day, reviews_by_day, reviews_by_user = reviews.reviews_aggregations(startdate)
+    
+    average_scans2kits_time_of_day, scans2kits_by_day, scans2kits_by_user = scans2kits.scans2kits_aggregations(startdate)
+        
     
     
     # Lists user-level DataFrames
     user_dataframes=[]
-    user_dataframes.append(scans_by_user)
-    user_dataframes.append(accessions_by_user)
+    user_dataframes.append(scans2kits_by_user)
+    user_dataframes.append(entries_by_user)
+    user_dataframes.append(reviews_by_user)
     user_dataframes.append(tickets_by_user)
     
     # Lists unique full names
@@ -62,12 +68,15 @@ if __name__=="__main__":
     
     # Lists day-level DataFrames
     day_dataframes=[]
-    day_dataframes.append(scans_by_day)
-    day_dataframes.append(average_scans_time_of_day)
-    day_dataframes.append(accessions_by_day)
-    day_dataframes.append(average_accessions_time_of_day)
+    day_dataframes.append(scans2kits_by_day)
+    day_dataframes.append(average_scans2kits_time_of_day)
+    day_dataframes.append(entries_by_day)
+    day_dataframes.append(average_entries_time_of_day)
+    day_dataframes.append(reviews_by_day)
+    day_dataframes.append(average_reviews_time_of_day)
     day_dataframes.append(tickets_by_day)
     day_dataframes.append(average_tickets_time_of_day)
+
         
     # Merges user-level DataFrames. Sorts by day and pivots.
     for x in user_dataframes:
@@ -75,7 +84,7 @@ if __name__=="__main__":
     users_and_days["sortday"]=pd.to_datetime(users_and_days["day"])
     users_and_days_pivot_table=users_and_days.pivot(index=["name"],
                               columns=["sortday"],
-                              values=['pages_scanned', 'samples_acccessioned','tickets_created'])
+                              values=['entries', 'reviews', 'scans_assigned_to_kits','tickets_created'])
     
     # Merges day-level DataFrames.
     for x in day_dataframes:
@@ -89,9 +98,21 @@ if __name__=="__main__":
     daily=utils.timedelta2time(daily).transpose()
     
     # Pushes to this week's spreadsheet
-    thisweekreport="Accessioning - Weekly Shift Report - {}".format(startdate.strftime("%Y%m%d"))
+    thisweekreport="Data Entry - Weekly Shift Report - {}".format(startdate.strftime("%Y%m%d"))
     utils.pd2gs(thisweekreport, "User Data", users_and_days_pivot_table, include_index=True)
     utils.pd2gs(thisweekreport, "Daily Data", daily, include_index=True)
+
+
+
+if __name__=="__main__":
+    try:
+        main()
+        print("Succeeded at {}".format(datetime.now()))
+        input("Press enter to quit")
+    except Exception:
+        print(Exception)
+        print("Failed at {}".format(datetime.now()))
+        input("Press enter to quit")
     
     
     

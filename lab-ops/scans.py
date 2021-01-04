@@ -15,7 +15,7 @@ def scans_from_db(startdate):
     engine=create_engine(os.environ["PROD_FOLLOWER_DATABASE_URL"])
     sql_get_scans="""
          SELECT 
-         s.id, page, page_count AS pages_scanned,
+         s.id, page, 1 AS pages_scanned,
          CONCAT(du.first_name,' ',du.last_name) AS fullname,
          s.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'EST' AS created_at
          

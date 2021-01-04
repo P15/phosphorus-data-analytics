@@ -35,9 +35,9 @@ def get_using_url(url,proplist,prod=False):
     df=df.rename(lambda x: "companyid" if 'associations.comp' in x else x, axis=1)
     if any(y in url for y in ["line_items","deals?"]):
         try:
-            df["dealid"]=[x[0]['id'] if x != np.nan else np.nan for x in df.dealid]
+            df["dealid"]=[x[0]['id'] if x is not np.nan else np.nan for x in df.dealid]
         except:
-            df["companyid"]=[x[0]['id'] if x != np.nan else np.nan for x in df.companyid]
+            df["companyid"]=[x[0]['id'] if x is not np.nan else np.nan for x in df.companyid]
     else:
         try:
             df=df.drop(columns=["dealid"])
