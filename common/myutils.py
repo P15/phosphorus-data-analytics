@@ -129,6 +129,10 @@ def timedelta2time(df):
     return df
 
 
+def colsearch(df,string):
+    cols = df.columns[[string in col.lower() for col in df]]
+    return cols
+
 ###########################################################
 
 

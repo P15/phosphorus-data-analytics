@@ -18,8 +18,8 @@ The end result is two Pandas DataFrames, one of all activity per day, and the ot
 import os
 import sys
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-sys.path.append(__location__ + '/../../')
-from common import utils
+sys.path.append(__location__ + '/../')
+from common import myutils
 import pandas as pd
 from datetime import datetime,timedelta
 import entries
@@ -49,11 +49,10 @@ def main():
     
     
     # Lists user-level DataFrames
-    user_dataframes=[]
-    user_dataframes.append(scans2kits_by_user)
-    user_dataframes.append(entries_by_user)
-    user_dataframes.append(reviews_by_user)
-    user_dataframes.append(tickets_by_user)
+    user_dataframes=[scans2kits_by_user,
+                     entries_by_user,
+                     reviews_by_user,
+                     tickets_by_user]
     
     # Lists unique full names
     allnames = []
@@ -67,15 +66,15 @@ def main():
     users_and_days = pd.DataFrame({"day":timeofday_for_names.day, "name":allnames.name})
     
     # Lists day-level DataFrames
-    day_dataframes=[]
-    day_dataframes.append(scans2kits_by_day)
-    day_dataframes.append(average_scans2kits_time_of_day)
-    day_dataframes.append(entries_by_day)
-    day_dataframes.append(average_entries_time_of_day)
-    day_dataframes.append(reviews_by_day)
-    day_dataframes.append(average_reviews_time_of_day)
-    day_dataframes.append(tickets_by_day)
-    day_dataframes.append(average_tickets_time_of_day)
+    day_dataframes=[scans2kits_by_day,
+                    average_scans2kits_time_of_day,
+                    entries_by_day,
+                    average_entries_time_of_day,
+                    reviews_by_day,
+                    average_reviews_time_of_day,
+                    tickets_by_day,
+                    average_tickets_time_of_day]
+
 
         
     # Merges user-level DataFrames. Sorts by day and pivots.
@@ -95,12 +94,12 @@ def main():
         daily[col]=daily[col].fillna(0)
     
     # Converts timedelta to time of day. Transposes.
-    daily=utils.timedelta2time(daily).transpose()
+    daily=myutils.timedelta2time(daily).transpose()
     
     # Pushes to this week's spreadsheet
     thisweekreport="Data Entry - Weekly Shift Report - {}".format(startdate.strftime("%Y%m%d"))
-    utils.pd2gs(thisweekreport, "User Data", users_and_days_pivot_table, include_index=True)
-    utils.pd2gs(thisweekreport, "Daily Data", daily, include_index=True)
+    myutils.pd2gs(thisweekreport, "User Data", users_and_days_pivot_table, include_index=True)
+    myutils.pd2gs(thisweekreport, "Daily Data", daily, include_index=True)
 
 
 

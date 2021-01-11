@@ -7,11 +7,8 @@ Created on Wed Dec 30 13:50:24 2020
 
 import os
 import pandas as pd
-from datetime import datetime,timedelta
-from statistics import mean
 import numpy as np
 from sqlalchemy import create_engine
-from common import utils
 
 
 def reviews_from_db(startdate):
