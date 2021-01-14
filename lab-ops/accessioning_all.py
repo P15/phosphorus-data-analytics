@@ -19,7 +19,7 @@ import os
 import sys
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 sys.path.append(__location__ + '/../')
-from common import utils
+from common import myutils
 import pandas as pd
 from datetime import datetime,timedelta
 import accessions
@@ -27,9 +27,8 @@ import scans
 import tickets
 
 
-def main():
+def main(today):
       # Defines a DataFrame index with every day in the week so that days with zero activity are not missed
-    today = datetime.now().date()
     enddate = today + timedelta(days = 6 - today.weekday())
     startdate = today - timedelta(days=today.weekday())
     daily = pd.DataFrame(index=[(startdate + timedelta(days=x)).strftime('%m/%d/%Y') for x in range((enddate-startdate).days + 1)])
@@ -43,11 +42,11 @@ def main():
     average_scans_time_of_day, scans_by_day, scans_by_user = scans.scans_aggregations(startdate)
     
     
-    # Lists user-level DataFrames
-    user_dataframes=[]
-    user_dataframes.append(scans_by_user)
-    user_dataframes.append(accessions_by_user)
-    user_dataframes.append(tickets_by_user)
+    # Lists user-level DataFrames 
+    user_dataframes=[scans_by_user,
+                     accessions_by_user,
+                     tickets_by_user]
+    
     
     # Lists unique full names
     allnames = []
@@ -61,14 +60,14 @@ def main():
     users_and_days = pd.DataFrame({"day":timeofday_for_names.day, "name":allnames.name})
     
     # Lists day-level DataFrames
-    day_dataframes=[]
-    day_dataframes.append(scans_by_day)
-    day_dataframes.append(average_scans_time_of_day)
-    day_dataframes.append(accessions_by_day)
-    day_dataframes.append(average_accessions_time_of_day)
-    day_dataframes.append(tickets_by_day)
-    day_dataframes.append(average_tickets_time_of_day)
-        
+    day_dataframes=[scans_by_day,
+                    average_scans_time_of_day,
+                    accessions_by_day,
+                    average_accessions_time_of_day,
+                    tickets_by_day,
+                    average_tickets_time_of_day]
+    
+    
     # Merges user-level DataFrames. Sorts by day and pivots.
     for x in user_dataframes:
         users_and_days=users_and_days.merge(x, left_on=["day","name"], right_index=True, how="outer").fillna(0)
@@ -86,17 +85,17 @@ def main():
         daily[col]=daily[col].fillna(0)
     
     # Converts timedelta to time of day. Transposes.
-    daily=utils.timedelta2time(daily).transpose()
+    daily=myutils.timedelta2time(daily).transpose()
     
     # Pushes to this week's spreadsheet
     thisweekreport="Accessioning - Weekly Shift Report - {}".format(startdate.strftime("%Y%m%d"))
-    utils.pd2gs(thisweekreport, "User Data", users_and_days_pivot_table, include_index=True)
-    utils.pd2gs(thisweekreport, "Daily Data", daily, include_index=True)
+    myutils.pd2gs(thisweekreport, "User Data", users_and_days_pivot_table, include_index=True)
+    myutils.pd2gs(thisweekreport, "Daily Data", daily, include_index=True)
     
 
 if __name__=="__main__":
     try:
-        main()
+        main(datetime(2021,1,8))
         print("Succeeded at {}".format(datetime.now()))
         input("Press enter to quit")
     except Exception as e:

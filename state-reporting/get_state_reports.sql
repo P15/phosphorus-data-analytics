@@ -1,0 +1,199 @@
+with dist_and_sub_dists as (
+    select id from distributors
+    where id = 15
+       or parent_distributor_id = 15
+), sent_report_ids as (
+    select distinct report_id from event_logs where event_type = 'report_marked_state_reported' -- Report.state_reported
+), reports_to_work_with as (
+    select distinct r.id as report_id,
+                    r.patient_user_id,
+                    r.kit_id
+    from reports r
+             left join locations on r.patient_user_id = locations.patient_user_id
+    where r.cached_distributor_id in (select id from dist_and_sub_dists)
+--     and r.id not in (select report_id from sent_report_ids)
+      AND r.sent_date::TEXT >= '{}'
+      AND r.sent_date::TEXT <= '{}'
+--    and r.sent_date is not null
+      and locations.state = '{}'
+      and r.status in ('approved', 'sent', 'sent_to_patient', 'consultation_pending')
+-- ), mark_reported as (
+--     INSERT INTO "event_logs" (patient_user_id,report_id, event_type, agent_type, user_id,  "domain", created_at)
+--     select patient_user_id, id, 'report_marked_state_reported', 'human', 16025, 'script', current_timestamp from reports_to_work_with
+    -- using jacob's users.id == 16025
+), first_provider_location as (
+    select
+           reports_to_work_with.report_id,
+           c.id as clinic_id,
+   case
+        when c.main_location_id is null then (array_agg(pl.id))[1]
+        else c.main_location_id
+    end as location_id
+    from reports_to_work_with
+    join reports on reports_to_work_with.report_id = reports.id
+    join clinics c on reports.provider_clinic_id = c.id
+    left join locations pl on pl.clinic_id = c.id
+    group by reports_to_work_with.report_id, c.id
+), report_provider_clinic as (
+    select
+        reports.id as report_id,
+        C.id as clinic_id,
+        C.phone as provider_phone,
+        concat(PL.ADDRESS_1,' ',PL.ADDRESS_2) as Address,
+        PL.CITY,
+        PL.STATE,
+        PL.ZIP,
+        C.name as clinic_name
+    from reports_to_work_with
+    join reports on reports_to_work_with.report_id = reports.id
+    join first_provider_location on reports_to_work_with.report_id = first_provider_location.report_id
+    join locations PL on first_provider_location.location_id = PL.id
+    join clinics C on first_provider_location.clinic_id = C.id
+), report_specimens as (
+    select reports_to_work_with.report_id,
+                    (array_agg(samples.id))[1] as sample_id
+    from reports_to_work_with
+    join samples on samples.kit_id = reports_to_work_with.kit_id
+    join sample_data_sources on sample_id = samples.id
+    where samples.kit_id in (select kit_id from reports_to_work_with)
+    and sample_data_sources.status in ('qc_pending', 'qc_hold', 'qc_approved', 'vc_complete', 'further_review')
+    group by report_id, samples.id
+), output_results as (
+    select
+       
+                 'Phosphorus Elements' AS "Sending Application",
+                 NULL AS "Sending Application ID",
+                 NOW() AS "Message Date and Time",
+                 NULL AS "Receiving Application",
+                 'Phosphorus Diagnostics LLC' AS "Lab Name",
+                 case
+                     when distributors.clia_number is  not null then distributors.clia_number
+                     else '31D2123554'
+                     end
+                     AS "Lab CLIA",
+                 '400 Plaza Drive, Suite 401' AS "Lab Address",
+                 'Secaucus' AS "Lab City",
+                 'NJ' AS "Lab State",
+                 '07094' AS "Lab Zip",
+                 '855-746-7423' AS "Lab Phone",
+                 R.REPORT_TYPE_ID AS "Test Code",
+                 RT.NAME AS "Test Name",
+                 CASE
+                     when s.collection_type = 'Saliva' then '95425-5'
+                     when s.collection_type = 'Swab' then '94533-7'
+                     end
+                     AS "LOINC Code",
+                 CASE
+                     when s.collection_type = 'Saliva' then 'Saliva specimen to test SARS-CoV-2 N gene'
+                     when s.collection_type = 'Swab' then 'Respiratory specimen to test SARS-CoV-2 N gene'
+                     end
+                     AS "LOINC Description",
+               
+                 'BioRad CFX384 Touch Real-Time PCR Detection System' AS "Test Instrument",
+                 R.RESULT AS "Result",
+                 NULL AS "Result Status Code (NYS)",
+                 R.SENT_DATE AS "Result Date and Time",
+                 PU.ID AS "Patient ID",
+                 PU.FIRST_NAME AS "Patient First Name",
+                 PU.LAST_NAME AS "Patient Last Name",
+                 PU.BIRTH_DATE AS "Patient Date of Birth",
+                 PU.GENDER AS "Patient Sex",
+                 array_to_string(array_agg(ETH.NAME), ',', ' ') AS "Patient Race",
+                 NULL AS "Patient Ethnicity",
+                 CONCAT(L.ADDRESS_1,' ',L.ADDRESS_2) AS "Patient Street Address",
+                 L.CITY AS "Patient City",
+                 L.STATE AS "Patient State",
+                 L.ZIP AS "Patient Zip",
+                 NULL AS "Patient County",
+                case
+                    when L.COUNTRY = 'US' then 'United States of America'
+                    when L.COUNTRY = 'USA' then 'United States of America'
+                    else L.country
+                end
+                  AS "Patient Country",
+                 PU.PHONE AS "Patient Phone",
+                 C.NAME AS "Ordering Facility",
+                 pl.address AS "Ordering Facility Address",
+                 PL.CITY AS "Ordering Facility City",
+                 PL.STATE AS "Ordering Facility State",
+                 PL.ZIP AS "Ordering Facility Zip",
+                 C.PHONE AS "Ordering Facility Phone",
+                 PR.FIRST_NAME AS "Provider First Name",
+                 PR.LAST_NAME AS "Provider Last Name",
+                 PR.TITLE AS "Provider Name Suffix",
+                 pl.address AS "Provider Address",
+                 PL.CITY AS "Provider City",
+                 PL.STATE AS "Provider State",
+                 PL.ZIP AS "Provider Zip",
+                 PL.provider_phone AS "Provider Phone",
+                 PR.NPI AS "Provider NPI",
+                 S.BARCODE AS "Specimen ID / Accession Number",
+                 S.COLLECTION_DATE AS "Collection Date and Time",
+                 S.COLLECTION_TYPE AS "Specimen Type",
+                 CASE
+                     when s.collection_type = 'Saliva' then 'Mouth'
+                     when s.collection_type = 'Swab' then 'Nasopharynx'
+                     end
+                 AS "Specimen Source/Site",
+                 NULL AS "Notes",
+                 NULL AS "Previous Test Exists (Y/N)",
+                 NULL AS "Healthcare Worker (Y/N)",
+                 NULL AS "Symptom Onset Date",
+                 NULL AS "Hospitalized (Y/N)",
+                 NULL AS "Congregate Care Resident (Y/N)",
+                 NULL AS "Pregnant (Y/N)"
+    from reports_to_work_with
+             join reports r on reports_to_work_with.report_id = r.id
+             join distributors on r.cached_distributor_id = distributors.id
+             JOIN PATIENT_USERS PU ON PU.ID = R.PATIENT_USER_ID
+             JOIN REPORT_TYPES RT ON RT.ID = R.REPORT_TYPE_ID
+             left JOIN ETHNICITIES_PATIENT_USERS EP ON EP.PATIENT_USER_ID = PU.ID
+             left JOIN ETHNICITIES ETH ON ETH.ID = EP.ETHNICITY_ID
+             left JOIN LOCATIONS L ON L.PATIENT_USER_ID = PU.ID
+             left JOIN report_provider_clinic PL ON R.id = pl.report_id
+             JOIN CLINICS C ON C.ID = R.clinic_id
+             left JOIN PRACTITIONERS PR ON PU.practitioner_id = PR.id
+             left JOIN report_specimens RS ON RS.report_id = R.ID
+             join samples s on RS.sample_id = s.id
+    group by
+        R.RESULT,
+        R.SENT_DATE,
+        PU.ID,
+        R.REPORT_TYPE_ID,
+        S.BARCODE,
+        PU.FIRST_NAME,
+        PU.LAST_NAME,
+        PU.BIRTH_DATE,
+        PU.GENDER,
+        L.ADDRESS_1,
+        L.ADDRESS_2,
+        L.CITY,
+        L.STATE,
+        L.ZIP,
+        L.COUNTRY,
+        PU.PHONE,
+        C.PHONE,
+        C.NAME,
+        PL.CITY,
+        PL.STATE,
+        PL.ZIP,
+        PL.ADDRESS,
+        RT.NAME,
+        PL.provider_phone,
+        PR.PHONE,
+        PR.FIRST_NAME,
+        PR.LAST_NAME,
+        PR.TITLE,
+        PL.CITY,
+        PL.STATE,
+        PL.ZIP,
+        PR.PHONE,
+        PR.NPI,
+        S.COLLECTION_DATE,
+        S.COLLECTION_TYPE,
+        S.BARCODE,
+        distributors.clia_number,
+        R.id
+) SELECT * from output_results
+
+
