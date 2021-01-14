@@ -43,11 +43,11 @@ def main():
     average_scans_time_of_day, scans_by_day, scans_by_user = scans.scans_aggregations(startdate)
     
     
-    # Lists user-level DataFrames
-    user_dataframes=[]
-    user_dataframes.append(scans_by_user)
-    user_dataframes.append(accessions_by_user)
-    user_dataframes.append(tickets_by_user)
+    # Lists user-level DataFrames 
+    user_dataframes=[scans_by_user,
+                     accessions_by_user,
+                     tickets_by_user]
+    
     
     # Lists unique full names
     allnames = []
@@ -61,14 +61,14 @@ def main():
     users_and_days = pd.DataFrame({"day":timeofday_for_names.day, "name":allnames.name})
     
     # Lists day-level DataFrames
-    day_dataframes=[]
-    day_dataframes.append(scans_by_day)
-    day_dataframes.append(average_scans_time_of_day)
-    day_dataframes.append(accessions_by_day)
-    day_dataframes.append(average_accessions_time_of_day)
-    day_dataframes.append(tickets_by_day)
-    day_dataframes.append(average_tickets_time_of_day)
-        
+    day_dataframes=[scans_by_day,
+                    average_scans_time_of_day,
+                    accessions_by_day,
+                    average_accessions_time_of_day,
+                    tickets_by_day,
+                    average_tickets_time_of_day]
+    
+    
     # Merges user-level DataFrames. Sorts by day and pivots.
     for x in user_dataframes:
         users_and_days=users_and_days.merge(x, left_on=["day","name"], right_index=True, how="outer").fillna(0)

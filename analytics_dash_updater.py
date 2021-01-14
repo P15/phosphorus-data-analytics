@@ -10,7 +10,7 @@ import pandas as pd
 from datetime import datetime,timedelta
 from statistics import mean
 import numpy as np
-from common import utils
+from common.myutils import *
 from sqlalchemy import create_engine
 import re
 
@@ -19,7 +19,7 @@ import re
 def reports_from_db():
     print("getting reports from db...")
     engine = create_engine(os.environ["PROD_FOLLOWER_DATABASE_URL"])
-    startdate=datetime(2020,12,1) #Plan to dynamically define start_date in the future
+    startdate=datetime(2020,12,15) #Plan to dynamically define start_date in the future
     
     # Creates a pandas dataframe of all reports and events.
     # Includes start hour and created hour as truncated dates.
@@ -34,7 +34,7 @@ def reports_from_db():
              k.tracking_number AS tracking_number,
              e.created_at AS event_log_timestamp, 
              e.event_type,
-             s.received_at AS sample_recieved_at,
+             s.received_at AS sample_received_at,
              s.collection_date
              --u.username
              
@@ -49,30 +49,31 @@ def reports_from_db():
             --JOIN users u ON u.id=e.user_id
           
          WHERE
-             r.start_date>= '{}'
+             r.start_date AT TIME ZONE 'UTC' AT TIME ZONE 'EST'>= '{}'
              AND (r.start_date) IS NOT NULL
+             --AND r.cached_distributor_id = 15
 
 
          ;""".format(startdate)
     df=pd.read_sql_query(sql,engine)
-    df=utils.UTC2EST(df)
+    df=UTC2EST(df)
     # Stupid quick fix for another problem. Need to fix this.
     df["sent_day"] = [x.strftime("%m/%d/%Y") if x is not pd.NaT else pd.NaT for x in df.sent_date]
     df["start_day"] = [x.strftime("%m/%d/%Y") if x is not pd.NaT else pd.NaT for x in df.start_date]
     df["sent_time"] = [x.strftime("%H:%M:%S") if x is not pd.NaT else pd.NaT for x in df.sent_date]
     df["start_time"] = [x.strftime("%H:%M:%S") if x is not pd.NaT else pd.NaT for x in df.start_date]
-    df["recieve_day"] = [x.strftime("%m/%d/%Y") if x is not pd.NaT else pd.NaT for x in df.sample_recieved_at]
+    df["receive_day"] = [x.strftime("%m/%d/%Y") if x is not pd.NaT else pd.NaT for x in df.sample_received_at]
     df["event_day"] = [x.strftime("%m/%d/%Y") if x is not pd.NaT else pd.NaT for x in df.event_log_timestamp]
     df["start_hour"] = [x.hour if x is not pd.NaT else pd.NaT for x in df.start_date]
     df["create_hour"] = [x.hour if x is not pd.NaT else pd.NaT for x in df.created_at]
-    df["timedelta"] = df.sent_date-df.sample_recieved_at
+    df["timedelta"] = df.sent_date-df.sample_received_at
     return df
 
 
 def TATdash(reports,genomics=False):  
     print("preparing data for TAT dash...")
     
-
+    reports=reports.dropna(subset=["sent_day"])
     # redraw=TRUE if a report ever experienced the event "report_marked_redraw"
     redrawn_reports=reports[reports.event_type=="report_marked_redraw"]
     redrawn_report_ids=set(reports.id).intersection(set(redrawn_reports.id))
@@ -141,8 +142,8 @@ def TATdash(reports,genomics=False):
     new_order=['id',
                'delivery_datetime',
                "collection_date",
-               "sample_recieved_at",
-               'start_day',
+               "sample_received_at",
+               'receive_day',
                'sent_day',
                'start_time',
                'sent_time',
@@ -169,15 +170,17 @@ def TATdash(reports,genomics=False):
     
     # Uploads to google sheets
     if genomics:
-        utils.pd2gs("Genomics TAT","Data",reports)
+        pd2gs("Genomics TAT","Data",reports)
     else:
-        utils.pd2gs("COVID-19 - All Distributors TAT Dashboard","Data",reports)
+        pd2gs("COVID-19 - All Distributors TAT Dashboard","Data",reports)
         IRMSreports=reports[reports.clinic=="IRMS"]
-        utils.pd2gs("IRMS COVID-19 TAT Dashboard","Data",IRMSreports)
+        #pd2gs("IRMS COVID-19 TAT Dashboard","Data",IRMSreports)
         albertsons=reports[reports.distributor=="Albertsons"]
-        utils.pd2gs("Albertsons TAT Dashboard","Data",albertsons)
-        readyhealth=reports[reports.distributor=="Ready Health"]
-        utils.pd2gs("ReadyHealth TAT Dashboard","Data",readyhealth)
+        #pd2gs("Albertsons TAT Dashboard","Data",albertsons)
+        readyhealth=reports[reports.distributor.str.contains("Ready Health")]
+        pd2gs("ReadyHealth TAT Dashboard","Data",readyhealth)
+        westside=reports[reports.clinic.str.contains("Westside")]
+        pd2gs("WestSide Projected Refund","Data",westside)
     return reports
 
 def add_trackers_to_reports(reports):
@@ -193,10 +196,10 @@ def add_trackers_to_reports(reports):
     # If there are new tracking numbers, creates easypost tracking objects. Else will simply use the trackers that already exist.
     if len(trackers_to_create)>0:
         print("adding tracking info to reports, including {} new trackers...".format(len(trackers_to_create)))
-        utils.create_ep_trackers_list(trackers_to_create, "fedex")
+        create_ep_trackers_list(trackers_to_create, "fedex")
         
         try:
-            trackers = utils.get_easypost_trackers(trackers_to_create)
+            trackers = get_easypost_trackers(trackers_to_create)
             updated_trackers=old_trackers.append(trackers)
             
             # Writes SQL table
@@ -242,9 +245,9 @@ def events_by_day(reports):
     # Filters for only COVID tests
     reports=reports[reports.test.str.contains("COVID")]
 
-    # Creates a column for the recieved event which will come in handy later
-    recieved=reports.drop_duplicates(subset=["id"],keep="last")
-    recieved=recieved.groupby(["recieve_day"])[["occurances"]].sum().rename(columns={"occurances":"Received"})
+    # Creates a column for the received event which will come in handy later
+    received=reports.drop_duplicates(subset=["id"],keep="last")
+    received=received.groupby(["receive_day"])[["occurances"]].sum().rename(columns={"occurances":"Received"})
     
     # Events will be collected into major categories and renamed to look nicer on the chart. Everything not included will not appear in the report.
     # Key is a search term, value is what it will be replaced with 
@@ -279,12 +282,12 @@ def events_by_day(reports):
     events=reports.groupby(["event_day",pd.Grouper(key="new_event_type")])[["occurances"]].sum().reset_index().pivot("event_day","new_event_type","occurances")
     
     # Merges both with the recievd column
-    startevents=startevents.merge(recieved,left_index=True,right_on="recieve_day").reset_index()
-    events=events.merge(recieved,left_index=True,right_on="recieve_day").reset_index()
+    startevents=startevents.merge(received,left_index=True,right_on="receive_day").reset_index()
+    events=events.merge(received,left_index=True,right_on="receive_day").reset_index()
     
     # Pushes to google sheets
-    utils.pd2gs("Events Report","Start Date",startevents)
-    utils.pd2gs("Events Report","Event Date",events)
+    pd2gs("Events Report","Start Date",startevents)
+    pd2gs("Events Report","Event Date",events)
 
 def time_in_stage(reports):
         reports["Time in Stage"]=np.nan
@@ -306,7 +309,7 @@ def time_in_stage(reports):
 def positives(reports):
     # Updates positives dashboards
     new_order=['id',
-               'start_day',
+               'receive_day',
                'sent_day',
                'expedited',
                'result',
@@ -318,7 +321,7 @@ def positives(reports):
                'clinic']
     positives_reports=reports[new_order]
     
-    utils.pd2gs("All Distributors COVID Positives Dashboard","Data",positives_reports)
+    pd2gs("All Distributors COVID Positives Dashboard","Data",positives_reports)
     return positives_reports
 
 if __name__=="__main__":

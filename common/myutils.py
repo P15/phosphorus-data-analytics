@@ -9,6 +9,7 @@ import csv
 from datetime import datetime
 from sqlalchemy import create_engine
 import numpy as np
+import psycopg2
 
 ###################HUBSPOT##############################
 
@@ -112,13 +113,15 @@ def pd2gs(wkbook,sheet,df,clear=True,include_index=False):
     gd.set_with_dataframe(ws, df, include_index=include_index)
     
     
-def UTC2EST(df):
+def UTC2EST(df, *newformat):
     timecols=df.select_dtypes(include=["datetime64[ns]"])
     for col in timecols:
         df[col]=df[col] \
                 .dt.tz_localize("UTC") \
                 .dt.tz_convert("EST") \
                 .dt.tz_localize(None)
+        if newformat:
+            df[col]=[x.strftime(newformat[0]) if x is not pd.NaT else np.nan for x in df[col]]
     return df
 
 
@@ -129,8 +132,30 @@ def timedelta2time(df):
     return df
 
 
-###########################################################
+def colsearch(df,string):
+    cols = df.columns[[string in col.lower() for col in df]]
+    return cols
 
+###########################################################
+def execute_sql(conn, *argv):
+    """ Execute any SQL statement, with returning the number of records impacted by the statement """
+    with conn.cursor() as cur:
+        cur.execute(*argv)
+        return cur.rowcount
+
+
+def get_db_connection(ignore_role=False):
+    """ Create connection to the database using environment variables for the DATABASE_URL and DISTRIBUTOR_ID """
+    connection = psycopg2.connect(os.environ["PROD_FOLLOWER_DATABASE_URL"])
+    if not ignore_role:
+        execute_sql(connection, "SET ROLE = 'dist_%(distributor_id)s_bypassrls_group';", {'distributor_id': 15})
+    return connection
+
+
+def colsearch(df,string):
+    cols = df.columns[[string in col.lower() for col in df]]
+    return cols
+        
 
 #################### EASYPOST ###########################################################
 #Creates easypost objects (trackers) using a list of tracking codes in csv format. Can also return a list of those trackers.
