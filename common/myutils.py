@@ -104,14 +104,24 @@ def update_db_with_hs(prod=False):
         
 
 ############################################################
-def pd2gs(wkbook,sheet,df,clear=True,include_index=False):
-    print("pushing {} rows, {} columns, to {} sheet of {}".format(len(df),len(df.columns),sheet,wkbook))
+def pd2gs(wkbook,sheet,df,clear=True,include_index=False,header=True):
     gc = gspread.service_account(filename=os.environ["service_account_cred"])
-    ws = gc.open(wkbook).worksheet(sheet)
+    ws = gc.open(wkbook)
+    try:
+        ws = ws.add_worksheet(sheet, rows=100, cols=20)
+        print("Creating {}".format(sheet))
+    except:
+        ws = ws.worksheet(sheet)
     if clear:
         ws.clear()
-    gd.set_with_dataframe(ws, df, include_index=include_index)
-    
+    gd.set_with_dataframe(ws, df, include_index=include_index,include_column_header=header)
+    print("pushing {} rows, {} columns, to {} sheet of {}".format(len(df),len(df.columns),sheet,wkbook))
+
+def gs2pd(wkbook,sheet):
+    gc = gspread.service_account(filename=os.environ["service_account_cred"])
+    ws = gc.open(wkbook).worksheet(sheet)
+    return gd.get_as_dataframe(ws).dropna(axis=0,thresh=1).dropna(axis=1,thresh=1)
+
     
 def UTC2EST(df, *newformat):
     timecols=df.select_dtypes(include=["datetime64[ns]"])
@@ -144,18 +154,13 @@ def execute_sql(conn, *argv):
         return cur.rowcount
 
 
-def get_db_connection(ignore_role=False):
+def get_db_connection(ignore_role=False,database="FOLLOWER"):
     """ Create connection to the database using environment variables for the DATABASE_URL and DISTRIBUTOR_ID """
-    connection = psycopg2.connect(os.environ["PROD_FOLLOWER_DATABASE_URL"])
+    connection = psycopg2.connect(os.environ["{}_DB_URL".format(database)])
     if not ignore_role:
-        execute_sql(connection, "SET ROLE = 'dist_%(distributor_id)s_bypassrls_group';", {'distributor_id': 15})
+        execute_sql(connection, "SET ROLE = 'dist_%(distributor_id)s_application_group';", {'distributor_id': 15})
     return connection
 
-
-def colsearch(df,string):
-    cols = df.columns[[string in col.lower() for col in df]]
-    return cols
-        
 
 #################### EASYPOST ###########################################################
 #Creates easypost objects (trackers) using a list of tracking codes in csv format. Can also return a list of those trackers.

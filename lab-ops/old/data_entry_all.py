@@ -19,7 +19,7 @@ import os
 import sys
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 sys.path.append(__location__ + '/../')
-from common import utils
+from common import myutils
 import pandas as pd
 from datetime import datetime,timedelta
 import entries
@@ -32,6 +32,7 @@ import tickets
 def main():
      # Defines a DataFrame index with every day in the week so that days with zero activity are not missed
     today = datetime.now().date()
+    today = datetime(2021,1,8)
     enddate = today + timedelta(days=6-today.weekday())
     startdate = today - timedelta(days=today.weekday())
     daily = pd.DataFrame(index=[(startdate + timedelta(days=x)).strftime('%m/%d/%Y') for x in range((enddate-startdate).days + 1)])
@@ -94,12 +95,12 @@ def main():
         daily[col]=daily[col].fillna(0)
     
     # Converts timedelta to time of day. Transposes.
-    daily=utils.timedelta2time(daily).transpose()
+    daily=myutils.timedelta2time(daily).transpose()
     
     # Pushes to this week's spreadsheet
     thisweekreport="Data Entry - Weekly Shift Report - {}".format(startdate.strftime("%Y%m%d"))
-    utils.pd2gs(thisweekreport, "User Data", users_and_days_pivot_table, include_index=True)
-    utils.pd2gs(thisweekreport, "Daily Data", daily, include_index=True)
+    myutils.pd2gs(thisweekreport, "User Data", users_and_days_pivot_table, include_index=True)
+    myutils.pd2gs(thisweekreport, "Daily Data", daily, include_index=True)
 
 
 
