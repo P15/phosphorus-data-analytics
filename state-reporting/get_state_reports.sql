@@ -12,16 +12,12 @@ with dist_and_sub_dists as (
              left join locations on r.patient_user_id = locations.patient_user_id
     where r.cached_distributor_id in (select id from dist_and_sub_dists)
 --     and r.id not in (select report_id from sent_report_ids)
-      AND r.sent_date::TEXT >= '{}'
-      AND r.sent_date::TEXT <= '{}'
---    and r.sent_date is not null
+      AND r.sent_date >= '{}'
+      AND r.sent_date <= '{}'
       and locations.state = '{}'
       and r.status in ('approved', 'sent', 'sent_to_patient', 'consultation_pending')
--- ), mark_reported as (
---     INSERT INTO "event_logs" (patient_user_id,report_id, event_type, agent_type, user_id,  "domain", created_at)
---     select patient_user_id, id, 'report_marked_state_reported', 'human', 16025, 'script', current_timestamp from reports_to_work_with
-    -- using jacob's users.id == 16025
-), first_provider_location as (
+      and r.report_type_id = 283
+ ), first_provider_location as (
     select
            reports_to_work_with.report_id,
            c.id as clinic_id,
@@ -71,7 +67,7 @@ with dist_and_sub_dists as (
                      else '31D2123554'
                      end
                      AS "Lab CLIA",
-                 '400 Plaza Drive, Suite 401' AS "Lab Address",
+                 '400 Plaza Drive Suite 401' AS "Lab Address",
                  'Secaucus' AS "Lab City",
                  'NJ' AS "Lab State",
                  '07094' AS "Lab Zip",
@@ -111,9 +107,19 @@ with dist_and_sub_dists as (
                     else L.country
                 end
                   AS "Patient Country",
-                 PU.PHONE AS "Patient Phone",
+                 CASE
+					WHEN (PU.PHONE IS NULL AND PL.PROVIDER_PHONE IS NULL AND C.PHONE IS NULL) THEN '855-746-7423'
+					WHEN (PU.PHONE IS NULL AND PL.PROVIDER_PHONE IS NULL) THEN C.PHONE
+					WHEN PU.PHONE IS NULL THEN PL.PROVIDER_PHONE
+					else pu.phone
+		 		end
+						AS "Patient Phone",
                  C.NAME AS "Ordering Facility",
-                 pl.address AS "Ordering Facility Address",
+				CASE
+					WHEN pl.address is null then '400 Plaza Drive Suite 401'
+					else pl.address
+				 end
+ 						 AS "Ordering Facility Address",
                  PL.CITY AS "Ordering Facility City",
                  PL.STATE AS "Ordering Facility State",
                  PL.ZIP AS "Ordering Facility Zip",
@@ -155,6 +161,7 @@ with dist_and_sub_dists as (
              left JOIN PRACTITIONERS PR ON PU.practitioner_id = PR.id
              left JOIN report_specimens RS ON RS.report_id = R.ID
              join samples s on RS.sample_id = s.id
+    where s.collection_type IN ('Saliva','Swab')
     group by
         R.RESULT,
         R.SENT_DATE,
