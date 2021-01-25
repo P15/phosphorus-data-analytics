@@ -109,9 +109,9 @@ with dist_and_sub_dists as (
                   AS "Patient Country",
                  CASE
 					WHEN (PU.PHONE IS NULL AND PL.PROVIDER_PHONE IS NULL AND C.PHONE IS NULL) THEN '855-746-7423'
-					WHEN (PU.PHONE IS NULL AND PL.PROVIDER_PHONE IS NULL) THEN C.PHONE
+					WHEN (PU.PHONE IS NULL AND PL.PROVIDER_PHONE IS NULL) THEN split_part(C.PHONE, ',' ,1)
 					WHEN PU.PHONE IS NULL THEN PL.PROVIDER_PHONE
-					else pu.phone
+					else split_part(pu.phone, ',',1)
 		 		end
 						AS "Patient Phone",
                  C.NAME AS "Ordering Facility",
@@ -123,7 +123,7 @@ with dist_and_sub_dists as (
                  PL.CITY AS "Ordering Facility City",
                  PL.STATE AS "Ordering Facility State",
                  PL.ZIP AS "Ordering Facility Zip",
-                 C.PHONE AS "Ordering Facility Phone",
+                 split_part(C.PHONE, ',' ,1) AS "Ordering Facility Phone",
                  PR.FIRST_NAME AS "Provider First Name",
                  PR.LAST_NAME AS "Provider Last Name",
                  PR.TITLE AS "Provider Name Suffix",
