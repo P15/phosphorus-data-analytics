@@ -35,7 +35,6 @@ if __name__=="__main__":
     sftpcreds=pd.read_csv(os.environ["SFTP_credfile"], index_col=0)
     
     
-    #this_file = os.path.abspath("C:/Users/Jacob-Windows/Documents/Phosphorus/phosphorus-data-analytics/state-reporting/mark-state-reported.py")
     this_file = os.path.abspath(__file__)
     this_dir = os.path.dirname(this_file)
     sql_file = os.path.join(this_dir, 'mark_state_reported.sql')
