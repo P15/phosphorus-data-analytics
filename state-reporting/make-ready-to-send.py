@@ -12,7 +12,7 @@ import glob
 import numpy as np
 from datetime import datetime
 import re
-from common.myutils import colsearch
+from common.utils import colsearch
         
 
 def add_leading_zeros(df):
@@ -34,27 +34,32 @@ def add_leading_zeros(df):
     return df
 
     
-def removetimestamp(df,file):
+def dates(df,file):
     # Reformats dates according to the dateformatdict. At some point I should take the time to look at every states template and re-establish
     # the correct date format.
     # Using select_dtypes is an alternate solution, but I've chosen to read the entire dataframe as strings and use this method instead.
     # This is also the way that all of the other validation methods are handled.
-    datecols = colsearch(df,["date", "dt", "dob"])
+    if "WV" not in file:
+        datecols = colsearch(df,["date", "dt", "dob"]) # West Virginia has a case that breaks things when "dt" is searched for
+    else:
+        datecols = colsearch(df,["date", "dob"])
     
     
     dateformatdict = {"%Y%m%d" : ["PA","OH","AZ","NJ","NM"] ,
-                      "%m/%d/%Y" : ["ID"] }
+                      "%m/%d/%Y" : ["ID","MO"] }
     
     state = os.path.basename(file) \
             .split(".")[0] \
             .split("_")[0]
 
-    
+    formset = False # Using this allows there to be a default format without having to add all the states to the list in the dict
     for form, states in dateformatdict.items():
         if state in states:
             dateformat = form
-        else:
-            dateformat = "%m/%d/%Y"
+            formset =  True
+            
+    if not formset:
+        dateformat = "%m/%d/%Y"
     
     
     for col in df[datecols]:
@@ -144,9 +149,8 @@ def phonenumbers(df, file):
 
 
 
-
 def validate(df, filename):
-    df = removetimestamp(df, filename)
+    df = dates(df, filename)
     df = phonenumbers(df, filename)
     df = add_leading_zeros(df)
     return df    
@@ -203,16 +207,16 @@ if __name__=="__main__":
     now = datetime.now()
     
     # Used to set a custom day. Should be set by an arg in the future.
-    now=datetime(2021,1,22)
+    #now=datetime(2021,1,24)
     
     folderpath = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(now.strftime("%B/%Y_%m_%d"))
-    step2path = folderpath+"/Step 2 Transformed XLSX and PDF Files"
-    step3path = folderpath+"/Step 3 Ready to Send"
+    step2path = folderpath + "/Step 2 Transformed XLSX and PDF Files"
+    step3path = folderpath + "/Step 3 Ready to Send"
     
+
     xlsxfiles = glob.glob(step2path+"/*.xlsx")
     pdffiles = glob.glob(step2path+"/*.pdf")
 
-    seenstates = []
     
     for file in xlsxfiles:
         df = makedf(file)

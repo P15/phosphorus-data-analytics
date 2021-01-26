@@ -64,7 +64,8 @@ for state in states:
         """.format(state)
         
         content = [
-            #message,yagmail.inline(logo), 
+            message,
+            #yagmail.inline(logo), 
             pdffile]
     except KeyError:
         send=False

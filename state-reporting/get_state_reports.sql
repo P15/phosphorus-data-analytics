@@ -127,11 +127,40 @@ with dist_and_sub_dists as (
                  PR.FIRST_NAME AS "Provider First Name",
                  PR.LAST_NAME AS "Provider Last Name",
                  PR.TITLE AS "Provider Name Suffix",
-                 pl.address AS "Provider Address",
-                 PL.CITY AS "Provider City",
-                 PL.STATE AS "Provider State",
-                 PL.ZIP AS "Provider Zip",
-                 PL.provider_phone AS "Provider Phone",
+                 CASE
+			WHEN pl.address is null then '400 Plaza Drive Suite 401'
+			else pl.address
+		 end
+			AS "Provider Address",
+
+		 CASE
+			WHEN pl.address is null then 'Secaucus'
+			else pl.city
+		 end
+                	AS "Provider City",
+
+		 CASE
+			WHEN pl.address is null then 'NJ'
+			else pl.state
+		 end
+                	AS "Provider State",
+		 CASE
+			WHEN pl.address is null then '07094'
+			else pl.zip
+		 end
+                	AS "Provider Zip",
+
+		 CASE
+			WHEN pl.provider_phone is null then ''
+			else pl.state
+		 end
+                	AS "Provider State",
+                 CASE
+					WHEN (PL.PROVIDER_PHONE IS NULL AND C.PHONE IS NULL) THEN '855-746-7423'
+					WHEN PL.PROVIDER_PHONE IS NULL THEN split_part(C.PHONE, ',' ,1)
+					else split_part(pl.provider_phone, ',',1)
+		 end
+			as "Provider Phone",
                  PR.NPI AS "Provider NPI",
                  S.BARCODE AS "Specimen ID / Accession Number",
                  S.COLLECTION_DATE AS "Collection Date and Time",
@@ -147,7 +176,8 @@ with dist_and_sub_dists as (
                  NULL AS "Symptom Onset Date",
                  NULL AS "Hospitalized (Y/N)",
                  NULL AS "Congregate Care Resident (Y/N)",
-                 NULL AS "Pregnant (Y/N)"
+                 NULL AS "Pregnant (Y/N)",
+		 NULL AS "NULLCOLUMN"
     from reports_to_work_with
              join reports r on reports_to_work_with.report_id = r.id
              join distributors on r.cached_distributor_id = distributors.id

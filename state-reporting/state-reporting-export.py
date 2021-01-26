@@ -13,10 +13,11 @@ import time
 
 
 
-def state_reports_export(state, startdate, enddate, sql_file, step1path, day):
+def state_reports_export(state, startdate, enddate, sql_file, step1path):
          
-    filepath = step1path + "/" + state + day.strftime("_%Y_%m_%d") + ".csv"
+    filepath = step1path + "/" + state + enddate.strftime("_%Y_%m_%d") + ".csv"
     
+    endstr =  enddate.strftime("%Y-%m-%d %H:%M")
     # Database argument defaults to "FOLLOWER". Can be changed to "STAGING","DEV", or "PROD". Not case sensitive. Prod requires ignore_role = False.
     # Role will be set to "dist_15_application_group"
     # The query being executed here only reads, does not write.
@@ -25,7 +26,7 @@ def state_reports_export(state, startdate, enddate, sql_file, step1path, day):
         with conn.cursor() as cur:
             with open(sql_file, 'r') as state_reports_export:
                 reports = state_reports_export.read()
-                reports = reports.format(startdate, enddate, state)
+                reports = reports.format(startdate, endstr, state)
                 cur.execute(reports)
                 df=pd.DataFrame(data=cur.fetchall(),
                                 columns=[desc.name for desc in cur.description])
@@ -42,8 +43,8 @@ def state_reports_export(state, startdate, enddate, sql_file, step1path, day):
 
 
 # Creates the three folders representing the 3-step process we are currently using. Returns the step 1 path since this script writes to that location.
-def initialize_folders(now):
-    folderpath = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(now.strftime("%B/%Y_%m_%d"))
+def initialize_folders(enddate):
+    folderpath = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(enddate.strftime("%B/%Y_%m_%d"))
     step1path = folderpath+"/Step 1 State CSV Files"
     step2path = folderpath+"/Step 2 Transformed XLSX and PDF Files"
     step3path = folderpath+"/Step 3 Ready to Send"
@@ -57,9 +58,9 @@ def initialize_folders(now):
 if __name__=="__main__":
     
     now = datetime.now()
-    enddate = now.strftime("%Y-%m-%d %H:%M")
+    enddate = now
     
-    step1path = initialize_folders(now)        
+    step1path = initialize_folders(enddate)        
     
     this_file = os.path.abspath("C:/Users/Jacob-Windows/Documents/Phosphorus/phosphorus-data-analytics/state-reporting/state-reporting.py")
     #this_file = os.path.abspath(__file__)
@@ -72,7 +73,7 @@ if __name__=="__main__":
         
     
     print("Last export read as {}".format(startdate))
-    
+    print("Getting reports from {} to {}".format(startdate,enddate))
 
 
 
@@ -87,9 +88,9 @@ if __name__=="__main__":
 
     # Custom times and state. Used for special situations like emails complaining about invalid data. Should be defined by args later.
     """
-    startdate=datetime(2020,1,1)
-    enddate=now
-    states=['NM]'
+    startdate=datetime(2021,1,21)
+    enddate=datetime(2021,1,24)
+    states=['MO']
     """
     
     # Tries to export state reports three times per state, to account for connectivity issues.
@@ -97,7 +98,7 @@ if __name__=="__main__":
         retries = 0
         while retries<4:
             try:
-                state_reports_export(state, startdate, enddate, sql_file, step1path, now)
+                state_reports_export(state, startdate, enddate, sql_file, step1path)
                 break
             except Exception as e:
                 print("Retrying {} due to: {}".format(state,e))
@@ -107,5 +108,5 @@ if __name__=="__main__":
 
     # Writes the timestamp that was used as the end date this run, so that it can be used as the start date in the next run.
     with open("last_export","w") as file:
-        file.write(enddate)
-    print("Last export written as {}".format(enddate))
+        file.write(now.strftime("%Y-%m-%d %H:%M"))
+    print("Last export written as {}".format(now.strftime("%Y-%m-%d %H:%M")))
