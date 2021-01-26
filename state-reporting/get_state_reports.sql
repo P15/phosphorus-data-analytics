@@ -115,14 +115,28 @@ with dist_and_sub_dists as (
 		 		end
 						AS "Patient Phone",
                  C.NAME AS "Ordering Facility",
-				CASE
-					WHEN pl.address is null then '400 Plaza Drive Suite 401'
-					else pl.address
-				 end
- 						 AS "Ordering Facility Address",
-                 PL.CITY AS "Ordering Facility City",
-                 PL.STATE AS "Ordering Facility State",
-                 PL.ZIP AS "Ordering Facility Zip",
+                 CASE
+			WHEN pl.address is null then '400 Plaza Drive Suite 401'
+			else pl.address
+		 end
+			AS "Ordering Facility Address",
+
+		 CASE
+			WHEN pl.address is null then 'Secaucus'
+			else pl.city
+		 end
+                	AS "Ordering Facility City",
+
+		 CASE
+			WHEN pl.address is null then 'NJ'
+			else pl.state
+		 end
+                	AS "Ordering Facility State",
+		 CASE
+			WHEN pl.address is null then '07094'
+			else pl.zip
+		 end
+                	AS "Ordering Facility ZIP",
                  split_part(C.PHONE, ',' ,1) AS "Ordering Facility Phone",
                  PR.FIRST_NAME AS "Provider First Name",
                  PR.LAST_NAME AS "Provider Last Name",
