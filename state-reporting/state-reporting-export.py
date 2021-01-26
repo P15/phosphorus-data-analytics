@@ -6,6 +6,9 @@ Created on Thu Dec 31 10:50:27 2020
 """
 
 import os
+import sys
+__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+sys.path.append(__location__ + '/../')
 from datetime import datetime
 import pandas as pd
 from common import utils
@@ -35,6 +38,9 @@ def state_reports_export(state, startdate, enddate, sql_file, step1path):
                     # If any reports were exported, all datetime columns are converted from UTC to EST and reformatted according to the input below.
                     # Then a CSV file will be created in the step 1 folder for each state.
                     df=utils.UTC2EST(df, "%m/%d/%Y %H:%M")
+                    df["Ordering Facility Address"].fillna("400 Plaza Dr")
+                    
+                    
                     df.to_csv(filepath, index=False, encoding='utf-8')
                     print("{} reports exported from {}".format(len(df), state))
                 

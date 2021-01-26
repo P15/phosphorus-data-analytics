@@ -150,11 +150,6 @@ with dist_and_sub_dists as (
 		 end
                 	AS "Provider Zip",
 
-		 CASE
-			WHEN pl.provider_phone is null then ''
-			else pl.state
-		 end
-                	AS "Provider State",
                  CASE
 					WHEN (PL.PROVIDER_PHONE IS NULL AND C.PHONE IS NULL) THEN '855-746-7423'
 					WHEN PL.PROVIDER_PHONE IS NULL THEN split_part(C.PHONE, ',' ,1)
