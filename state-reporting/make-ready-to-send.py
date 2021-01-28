@@ -15,7 +15,12 @@ import re
 from common.utils import colsearch
         
 
-def add_leading_zeros(df):
+def add_leading_zeros(df,file):
+    
+    state = os.path.basename(file) \
+            .split(".")[0] \
+            .split("_")[0]
+    
     zipcols=colsearch(df,"zip")
     
     # Pandas' read_excel function drops the leading zero on zip codes and I can't find a way to avoid that.
@@ -30,7 +35,10 @@ def add_leading_zeros(df):
                     newcol.append(code)
             else:
                 newcol.append(code)
+            if code == state:
+                newcol.append(np.nan)
         df[col] = newcol
+    df[zipcols] = df[zipcols].replace("0","")
     return df
 
     
@@ -149,10 +157,10 @@ def phonenumbers(df, file):
 
 
 
-def validate(df, filename):
-    df = dates(df, filename)
-    df = phonenumbers(df, filename)
-    df = add_leading_zeros(df)
+def validate(df, file):
+    df = dates(df, file)
+    df = phonenumbers(df, file)
+    df = add_leading_zeros(df, file)
     return df    
 
 
@@ -186,7 +194,7 @@ def write_csv(step3path, df, file, now): #any string with state abbreviation
         df.to_csv(writepath,sep="|",encoding="ascii",index=False,header=False)
         
     elif state=="TX":
-        df.to_csv(writepath, index=False, encoding="ascii")
+        df.to_csv(writepath, index=False)
         
     elif state=="IL":
         df.to_csv(writepath, sep="~", index=False, encoding="utf-8")
@@ -207,7 +215,7 @@ if __name__=="__main__":
     now = datetime.now()
     
     # Used to set a custom day. Should be set by an arg in the future.
-    #now=datetime(2021,1,24)
+    #now=datetime(2021,1,25)
     
     folderpath = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(now.strftime("%B/%Y_%m_%d"))
     step2path = folderpath + "/Step 2 Transformed XLSX and PDF Files"
@@ -215,6 +223,7 @@ if __name__=="__main__":
     
 
     xlsxfiles = glob.glob(step2path+"/*.xlsx")
+    
     pdffiles = glob.glob(step2path+"/*.pdf")
 
     

@@ -67,6 +67,7 @@ def colsearch(df,stringorlist):
                 cols.append(col)
     else:
         cols = list(df.columns[[stringorlist in col.lower() for col in df]])
+    
     return cols
 
 def liststringsearch(alist,astring):

@@ -93,8 +93,14 @@ with dist_and_sub_dists as (
                  PU.FIRST_NAME AS "Patient First Name",
                  PU.LAST_NAME AS "Patient Last Name",
                  PU.BIRTH_DATE AS "Patient Date of Birth",
-                 PU.GENDER AS "Patient Sex",
-                 array_to_string(array_agg(ETH.NAME), ',', ' ') AS "Patient Race",
+			case
+				when PU.GENDER = 'male' then 'M'
+				when PU.GENDER = 'female' then 'F'
+				else 'U'
+			end
+			AS "Patient Sex",		 
+
+                 array_to_string(array_agg(ETH.NAME), ',', ' ') as "Patient Race",
                  NULL AS "Patient Ethnicity",
                  CONCAT(L.ADDRESS_1,' ',L.ADDRESS_2) AS "Patient Street Address",
                  L.CITY AS "Patient City",
@@ -114,7 +120,7 @@ with dist_and_sub_dists as (
 					else split_part(pu.phone, ',',1)
 		 		end
 						AS "Patient Phone",
-                 C.NAME AS "Ordering Facility",
+                 split_part(C.NAME, '/',1) AS "Ordering Facility",
                  CASE
 			WHEN pl.address is null then '400 Plaza Drive Suite 401'
 			else pl.address
@@ -136,7 +142,7 @@ with dist_and_sub_dists as (
 			WHEN pl.address is null then '07094'
 			else pl.zip
 		 end
-                	AS "Ordering Facility ZIP",
+                	AS "Ordering Facility Zip",
                  split_part(C.PHONE, ',' ,1) AS "Ordering Facility Phone",
                  PR.FIRST_NAME AS "Provider First Name",
                  PR.LAST_NAME AS "Provider Last Name",

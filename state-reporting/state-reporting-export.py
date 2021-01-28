@@ -15,7 +15,6 @@ from common import utils
 import time
 
 
-
 def state_reports_export(state, startdate, enddate, sql_file, step1path):
          
     filepath = step1path + "/" + state + enddate.strftime("_%Y_%m_%d") + ".csv"
@@ -38,17 +37,23 @@ def state_reports_export(state, startdate, enddate, sql_file, step1path):
                     # If any reports were exported, all datetime columns are converted from UTC to EST and reformatted according to the input below.
                     # Then a CSV file will be created in the step 1 folder for each state.
                     df=utils.UTC2EST(df, "%m/%d/%Y %H:%M")
-                    """
-                    df["Ordering Facility Address"].fillna("400 Plaza Drive Suite 401")
-                    df["Provider Address"].fillna("400 Plaza Drive Suite 401")
-                    df["Ordering Facility City"].fillna("400 Plaza Drive Suite 401")
-                    df["Provider City"].fillna("400 Plaza Drive Suite 401")
-                    df["Ordering Facility State"].fillna("400 Plaza Drive Suite 401")
-                    df["Provider State"].fillna("400 Plaza Drive Suite 401")
-                    df["Ordering Facility ZIP"]
-                    df["Provider ZIP"].fillna()
-                    """
                     
+                    ##### THIS NEEDS TO BE SOLVED WITHIN THE QUERY ONE DAY #########
+                    df["Patient Race"]=[x.split(",")[0] for x in df["Patient Race"]]
+                    ############################################################
+
+                    
+                    # Probably won't need to use this. States tend not to demand these addresses
+                    """
+                    df["Ordering Facility Address"] = df["Ordering Facility Address"].replace(" ",np.nan).fillna("400 Plaza Drive Suite 401")
+                    df["Provider Address"] = df["Provider Address"].replace(" ",np.nan).fillna("400 Plaza Drive Suite 401")
+                    df["Ordering Facility City"] = df["Ordering Facility City"].replace(" ",np.nan).fillna("Secaucus")
+                    df["Provider City"] = df["Provider City"].replace(" ",np.nan).fillna("Secaucus")
+                    df["Ordering Facility State"] = df["Ordering Facility State"].replace(" ",np.nan).fillna("NJ")
+                    df["Provider State"] = df["Provider State"].replace(" ",np.nan).fillna("NJ")
+                    df["Ordering Facility ZIP"] = df["Ordering Facility ZIP"].replace(" ",np.nan).fillna("07094")
+                    df["Provider Zip"] = df["Provider Zip"].replace(" ",np.nan).fillna("07094")
+                    """
                     df.to_csv(filepath, index=False, encoding='utf-8')
                     print("{} reports exported from {}".format(len(df), state))
                 
@@ -76,8 +81,8 @@ if __name__=="__main__":
     
     step1path = initialize_folders(enddate)        
     
-    this_file = os.path.abspath("C:/Users/Jacob-Windows/Documents/Phosphorus/phosphorus-data-analytics/state-reporting/state-reporting.py")
-    #this_file = os.path.abspath(__file__)
+    #this_file = os.path.abspath("C:/Users/Jacob-Windows/Documents/Phosphorus/phosphorus-data-analytics/state-reporting/state-reporting.py")
+    this_file = os.path.abspath(__file__)
     this_dir = os.path.dirname(this_file)
     sql_file = os.path.join(this_dir, 'get_state_reports.sql')
 
@@ -102,9 +107,9 @@ if __name__=="__main__":
 
     # Custom times and state. Used for special situations like emails complaining about invalid data. Should be defined by args later.
     """
-    startdate=datetime(2020,1,2)
-    enddate=datetime(2021,1,26)
-    state='TX'
+    startdate=datetime(2021,1,21)
+    enddate=datetime(2021,1,24)
+    state='NJ'
     """
     
     # Tries to export state reports three times per state, to account for connectivity issues.
@@ -119,8 +124,8 @@ if __name__=="__main__":
                 retries=retries+1
                 time.sleep(2)
                 continue
-    
-   # now=datetime(2021,1,25,7,45)
+
+    #now=datetime(2021,1,25,7,45)
     # Writes the timestamp that was used as the end date this run, so that it can be used as the start date in the next run.
     with open("last_export","w") as file:
         file.write(now.strftime("%Y-%m-%d %H:%M"))
