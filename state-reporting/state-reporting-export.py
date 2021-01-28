@@ -13,7 +13,7 @@ from datetime import datetime
 import pandas as pd
 from common import utils
 import time
-
+import numpy as np
 
 def state_reports_export(state, startdate, enddate, sql_file, step1path):
          
@@ -42,18 +42,22 @@ def state_reports_export(state, startdate, enddate, sql_file, step1path):
                     df["Patient Race"]=[x.split(",")[0] for x in df["Patient Race"]]
                     ############################################################
 
+                    """
+                    # Not sure why my SQl cases don't work but I'm just using this for now.
+                    for x in df["Ordering Facility Address"]:
+                        if x.strip() is np.nan:
+                        df["Ordering Facility Address"] = df["Ordering Facility Address"].replace(" ",np.nan).fillna("400 Plaza Drive Suite 401")
+                        df["Ordering Facility City"] = df["Ordering Facility City"].replace(" ",np.nan).fillna("Secaucus")
+                        df["Ordering Facility State"] = df["Ordering Facility State"].replace(" ",np.nan).fillna("NJ")
+                        df["Ordering Facility Zip"] = df["Ordering Facility ZIP"].replace(" ",np.nan).fillna("07094")
+                        
+                    if df["Provider Address"].replace(" ",np.nan) is np.nan:
+                        df["Provider Address"] = df["Provider Address"].replace(" ",np.nan).fillna("400 Plaza Drive Suite 401")
+                        df["Provider City"] = df["Provider City"].replace(" ",np.nan).fillna("Secaucus")      
+                        df["Provider State"] = df["Provider State"].replace(" ",np.nan).fillna("NJ")
+                        df["Provider Zip"] = df["Provider Zip"].replace(" ",np.nan).fillna("07094")
+                    """
                     
-                    # Probably won't need to use this. States tend not to demand these addresses
-                    """
-                    df["Ordering Facility Address"] = df["Ordering Facility Address"].replace(" ",np.nan).fillna("400 Plaza Drive Suite 401")
-                    df["Provider Address"] = df["Provider Address"].replace(" ",np.nan).fillna("400 Plaza Drive Suite 401")
-                    df["Ordering Facility City"] = df["Ordering Facility City"].replace(" ",np.nan).fillna("Secaucus")
-                    df["Provider City"] = df["Provider City"].replace(" ",np.nan).fillna("Secaucus")
-                    df["Ordering Facility State"] = df["Ordering Facility State"].replace(" ",np.nan).fillna("NJ")
-                    df["Provider State"] = df["Provider State"].replace(" ",np.nan).fillna("NJ")
-                    df["Ordering Facility ZIP"] = df["Ordering Facility ZIP"].replace(" ",np.nan).fillna("07094")
-                    df["Provider Zip"] = df["Provider Zip"].replace(" ",np.nan).fillna("07094")
-                    """
                     df.to_csv(filepath, index=False, encoding='utf-8')
                     print("{} reports exported from {}".format(len(df), state))
                 

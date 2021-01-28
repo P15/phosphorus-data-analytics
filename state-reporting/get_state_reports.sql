@@ -122,50 +122,55 @@ with dist_and_sub_dists as (
 						AS "Patient Phone",
                  split_part(C.NAME, '/',1) AS "Ordering Facility",
                  CASE
-			WHEN pl.address is null then '400 Plaza Drive Suite 401'
+			WHEN (pl.address is null or pl.address = ' ') then '400 Plaza Drive Suite 401'
 			else pl.address
 		 end
 			AS "Ordering Facility Address",
 
 		 CASE
-			WHEN pl.address is null then 'Secaucus'
+			WHEN (pl.address is null or pl.address = ' ') then 'Secaucus'
 			else pl.city
 		 end
                 	AS "Ordering Facility City",
 
 		 CASE
-			WHEN pl.address is null then 'NJ'
+			WHEN (pl.address is null or pl.address = ' ') then 'NJ'
 			else pl.state
 		 end
                 	AS "Ordering Facility State",
 		 CASE
-			WHEN pl.address is null then '07094'
+			WHEN (pl.address is null or pl.address = ' ') then '07094'
 			else pl.zip
 		 end
                 	AS "Ordering Facility Zip",
-                 split_part(C.PHONE, ',' ,1) AS "Ordering Facility Phone",
+		 CASE
+					WHEN (PL.PROVIDER_PHONE IS NULL AND C.PHONE IS NULL) THEN '855-746-7423'
+					WHEN C.PHONE IS NULL THEN split_part(PL.PROVIDER_PHONE, ',' ,1)
+					else split_part(C.phone, ',',1)
+		 end
+			as "Ordering Facility Phone",
                  PR.FIRST_NAME AS "Provider First Name",
                  PR.LAST_NAME AS "Provider Last Name",
                  PR.TITLE AS "Provider Name Suffix",
                  CASE
-			WHEN pl.address is null then '400 Plaza Drive Suite 401'
+			WHEN (pl.address is null or pl.address = ' ') then '400 Plaza Drive Suite 401'
 			else pl.address
 		 end
 			AS "Provider Address",
 
 		 CASE
-			WHEN pl.address is null then 'Secaucus'
+			WHEN (pl.address is null or pl.address = ' ') then 'Secaucus'
 			else pl.city
 		 end
                 	AS "Provider City",
 
 		 CASE
-			WHEN pl.address is null then 'NJ'
+			WHEN (pl.address is null or pl.address = ' ') then 'NJ'
 			else pl.state
 		 end
                 	AS "Provider State",
 		 CASE
-			WHEN pl.address is null then '07094'
+			WHEN (pl.address is null or pl.address = ' ') then '07094'
 			else pl.zip
 		 end
                 	AS "Provider Zip",
