@@ -13,6 +13,7 @@ from datetime import datetime
 import numpy as np
 from mark_reported import mark_state_reported
 import time
+from dateutil.parser import parse
 
 def renameOH(file, step3path, now):
     newfilename = step3path + "Phosphorus Diagnostics LLC_{}.csv".format(now.strftime("%Y%m%d"))
@@ -40,9 +41,7 @@ if __name__=="__main__":
     sql_file = os.path.join(this_dir, 'mark_state_reported.sql')
     
     
-    now=datetime.now()
-    # If I need to send files from a different day, I use the line below. This can be controlled with an arg in the future.
-    #now=datetime(2021,1,22)
+    now=parse(input("Day to send [MM/DD/YYYY]: ") or datetime.now())
     folderpath = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(now.strftime("%B/%Y_%m_%d"))
     step1path = folderpath+"/Step 1 State CSV Files/"
     step3path = folderpath+"/Step 3 Ready to Send/"
@@ -57,9 +56,6 @@ if __name__=="__main__":
     exclusionlist = ["NM"]
     
     
-    # I have tested this for each individual state. I have followed up with email to confirm that the file was received with no issues.
-    # Nevertheless, you should set up with state = 'test' to prevent you from accidentally running the script.
-    # You can choose to set up a local SFTP server to run the test using this: https://www.solarwinds.com/free-tools/free-sftp-server
     
     with open("send_log","r") as logfile:
         sentfiles = logfile.read()
@@ -118,10 +114,12 @@ BECAUSE PROD = {}
 
 
             
-
+            
+            # I have tested this for each individual state. I have followed up with email to confirm that the file was received with no issues.
+            # Nevertheless, you should set up with state = 'test' to prevent you from accidentally running the script.
+            # You can choose to set up a local SFTP server to run the test using this: https://www.solarwinds.com/free-tools/free-sftp-server
             
 
-            
             # if state == 'test':
             # Indent from here to end to test
             try:
@@ -147,8 +145,9 @@ BECAUSE PROD = {}
                 with srv.cd(remotedir):
                      srv.put(file)
                      send_success = any([remotefilename in file for remotefilename in srv.listdir()])
-             
-                with open("send_log","a") as logfile:
+                     
+                # not sure if this is how I want to handle this
+                with open("send_log","a+") as logfile:
                     logfile.write(file+"\n")
                     print("{} appended to send log".format(file))
                     
@@ -180,9 +179,8 @@ BECAUSE PROD = {}
     
 
 
-
-
-
+                with open("send_log","r") as logfile:
+                    log = logfile.read()
 
 
 
