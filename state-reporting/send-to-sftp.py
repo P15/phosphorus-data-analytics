@@ -179,11 +179,6 @@ BECAUSE PROD = {}
     
 
 
-                with open("send_log","r") as logfile:
-                    log = logfile.read()
-
-
-
 
                 
                 
