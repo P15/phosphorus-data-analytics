@@ -13,6 +13,7 @@ import numpy as np
 from datetime import datetime
 import re
 from common.utils import colsearch
+from dateutil.parser import parse
         
 
 def add_leading_zeros(df,file):
@@ -28,15 +29,17 @@ def add_leading_zeros(df,file):
     for col in zipcols:
         newcol = []
         for code in df[col]:
-            if code is not np.nan:
-                if len(code)==4:
+            if (code is not np.nan) & (code != state):
+                if (len(code)==4):
                     newcol.append("0"+code)
+                elif len(code) < 4:
+                    newcol.append(np.nan)
                 else:
                     newcol.append(code)
+            elif code == state:
+                newcol.append(np.nan)
             else:
                 newcol.append(code)
-            if code == state:
-                newcol.append(np.nan)
         df[col] = newcol
     df[zipcols] = df[zipcols].replace("0","")
     return df
@@ -176,34 +179,26 @@ def makedf(file):
 
 def write_csv(step3path, df, file, now): #any string with state abbreviation
 
-    # Seemed too risky to simply use
-    # "NY" in file
-    # as the boolean for the if statement. Some future user could accidentally put "IN" or "PASS" or something in the name of
-    # a parent folder, triggering that for "IN" or "PA". I use a few lines to clarify here what the state is.
 
-    state = os.path.basename(file) \
-            .split(".")[0] \
-            .split("_")[0]
-        
-    filename = state + now.strftime("_%Y_%m_%d")
+    filename = os.path.basename(file).split(".")[0]
     writepath = step3path + "/" + filename + ".csv"
     
     # Most states are fine with the "else" option here, but several states have special requirements.
     
-    if state=="NY":
-        df.to_csv(writepath,sep="|",encoding="ascii",index=False,header=False)
+    if "NY" in filename:
+        df.to_csv(writepath,sep="|",index=False,header=False)
         
-    elif state=="TX":
+    elif "TX" in filename:
         df.to_csv(writepath, index=False)
         
-    elif state=="IL":
+    elif "IL" in filename:
         df.to_csv(writepath, sep="~", index=False, encoding="utf-8")
     
-    elif state=="AR":
+    elif "AR" in filename:
         df=df.dropna(subset=["Patient First Name"])
         df.to_excel(step3path + "/" + filename + ".xlsx", engine='openpyxl', index=False, encoding="utf-8")
     
-    elif state=="PA":
+    elif "PA" in filename:
         df.to_csv(writepath, header=False, index=False, encoding="utf-8")
         
     else:
@@ -212,10 +207,9 @@ def write_csv(step3path, df, file, now): #any string with state abbreviation
 
 
 if __name__=="__main__":
+
     now = datetime.now()
-    
-    # Used to set a custom day. Should be set by an arg in the future.
-    #now=datetime(2021,1,25)
+    now = parse(input("Day to transform [MM/DD/YYYY]: ") or now.strftime("%m/%d/%Y %H:%S"))
     
     folderpath = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(now.strftime("%B/%Y_%m_%d"))
     step2path = folderpath + "/Step 2 Transformed XLSX and PDF Files"
@@ -228,7 +222,9 @@ if __name__=="__main__":
 
     
     for file in xlsxfiles:
+        #raise Exception("Need to account for NY having a different name today")
         df = makedf(file)
    
         write_csv(step3path, df, file, now) # Requires the name of the file in order to identify the state, since every transformed document will have a
+
 

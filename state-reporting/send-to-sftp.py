@@ -27,7 +27,11 @@ def renameCA(file, step3path, now):
     os.remove(file)
     return newfilename
 
-
+def renameTX(file, step3path, now):
+    newfilename = step3path + "PhosphorusDiagnostics_{}_1.csv".format(now.strftime("%Y%m%d"))
+    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
+    os.remove(file)
+    return newfilename
     
 
 
@@ -40,8 +44,8 @@ if __name__=="__main__":
     this_dir = os.path.dirname(this_file)
     sql_file = os.path.join(this_dir, 'mark_state_reported.sql')
     
-    
-    now=parse(input("Day to send [MM/DD/YYYY]: ") or datetime.now())
+    now = datetime.now()
+    now=parse(input("Day to send [MM/DD/YYYY]: ") or now.strftime("%m/%d/%Y %H:%S"))
     folderpath = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(now.strftime("%B/%Y_%m_%d"))
     step1path = folderpath+"/Step 1 State CSV Files/"
     step3path = folderpath+"/Step 3 Ready to Send/"
@@ -68,7 +72,11 @@ if __name__=="__main__":
         send_success = False
         if file in sentfiles:
             print("{} file seen in sentfiles".format(state))
-            continue
+            sendagain = input("Send again? [y/n]: ")
+            if "Y" in sendagain.upper():
+                pass
+            else:
+                continue
         
         if state in sftpcreds.index:
             creds=sftpcreds.loc[state]

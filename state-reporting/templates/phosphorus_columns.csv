@@ -1,0 +1,63 @@
+﻿phos_colname,colid
+Sending Application,0
+Sending Application ID,1
+Message Date and Time,2
+Receiving Application,3
+Lab Name,4
+Lab CLIA,5
+Lab Address,6
+Lab City,7
+Lab State,8
+Lab Zip,9
+Lab Phone,10
+Test Code,11
+Test Name,12
+LOINC Code,13
+LOINC Description,14
+Test Instrument,15
+Result,16
+Result Status Code (NYS),17
+Result Date and Time,18
+Patient ID,19
+Patient First Name,20
+Patient Last Name,21
+Patient Date of Birth,22
+Patient Sex,23
+Patient Race,24
+Patient Ethnicity,25
+Patient Street Address,26
+Patient City,27
+Patient State,28
+Patient Zip,29
+Patient County,30
+Patient Country,31
+Patient Phone,32
+Ordering Facility,33
+Ordering Facility Address,34
+Ordering Facility City,35
+Ordering Facility State,36
+Ordering Facility Zip,37
+Ordering Facility Phone,38
+Provider First Name,39
+Provider Last Name,40
+Provider Name Suffix,41
+Provider Address,42
+Provider City,43
+Provider State,44
+Provider Zip,45
+Provider Phone Number,46
+Provider NPI,47
+Specimen ID / Accession Number,48
+Collection Date and Time,49
+Specimen Type,50
+Specimen Source/Site,51
+Notes,52
+Previous Tests Exist (Y/N),53
+Healthcare Worker (Y/N),54
+Symptom Onset Date,55
+Hospitalized (Y/N),56
+Congregate Care Resident (Y/N),57
+Pregnant (Y/N),58
+U,97
+UNK,98
+nullcolumn,99

@@ -9,7 +9,7 @@ import os
 import sys
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 sys.path.append(__location__ + '/../')
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta 
 import pandas as pd
 from common import utils
 import time
@@ -131,7 +131,7 @@ States should be entered as a two letter abbreviation.
         test = True
         
     
-    if states == '':
+    if states == ['']:
         states = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA", 
               "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", 
               "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", 
@@ -161,7 +161,8 @@ if __name__=="__main__":
     
     startdate, enddate, states, positives, lastexport, test = prompt()
     
-    step1path = initialize_folders(enddate)        
+    step1path = initialize_folders(enddate)     
+    
     if test:
         step1path = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(enddate.strftime("%B/")) + "test"
     

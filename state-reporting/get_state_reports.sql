@@ -80,12 +80,12 @@ with dist_and_sub_dists as (
                      end
                      AS "LOINC Code",
                  CASE
-                     when s.collection_type = 'Saliva' then 'Saliva specimen to test SARS-CoV-2 N gene'
-                     when s.collection_type = 'Swab' then 'Respiratory specimen to test SARS-CoV-2 N gene'
+                     when s.collection_type = 'Saliva' then 'SARS-CoV-2 (COVID19) N gene [Presence] in Saliva (oral fluid) by NAA with probe detection'
+                     when s.collection_type = 'Swab' then 'SARS-CoV-2 (COVID-19) N gene [Presence] in Respiratory specimen by NAA with probe detection'
                      end
                      AS "LOINC Description",
                
-                 'BioRad CFX384 Touch Real-Time PCR Detection System' AS "Test Instrument",
+                 'Phosphorus COVID-19 RT-qPCR Test' AS "Test Instrument",
                  R.RESULT AS "Result",
                  NULL AS "Result Status Code (NYS)",
                  R.SENT_DATE AS "Result Date and Time",
@@ -197,6 +197,9 @@ with dist_and_sub_dists as (
                  NULL AS "Hospitalized (Y/N)",
                  NULL AS "Congregate Care Resident (Y/N)",
                  NULL AS "Pregnant (Y/N)",
+		 age(PU.BIRTH_DATE) as "Patient Age",
+		 'U' as "U",
+		'UNK' as "UNK",
 		 NULL AS "NULLCOLUMN"
     from reports_to_work_with
              join reports r on reports_to_work_with.report_id = r.id
