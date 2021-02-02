@@ -1,4 +1,4 @@
-﻿MO_colname,colid,phoneform,dateform
+﻿mo_colname,colid,phoneform,dateform
 Lab,4,nodashes,%m/%d/%Y
 Patient_Last_Name,21,,
 Patient_First_Name,20,,

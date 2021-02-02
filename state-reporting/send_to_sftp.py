@@ -35,8 +35,7 @@ def renameTX(file, step3path, now):
     
 
 
-if __name__=="__main__":
-        
+def send_to_sftp(*filename):
     sftpcreds=pd.read_csv(os.environ["SFTP_credfile"], index_col=0)
     
     
@@ -177,16 +176,19 @@ BECAUSE PROD = {}
             # Shouldn't be necessary to check for send_success again but just to be safe, reports are only marked as state reported if the send
             # was successful (the file was found to be located on the server).
             if send_success:
-                try:
-                    
-                    reports_to_mark = pd.read_csv(step1path + state + now.strftime("_%Y_%m_%d") + ".csv")
-                    marked_reports = mark_state_reported(reports_to_mark, sql_file)
-                except:
-                    print("Error marking state reported")
-                 
-    
+                errorcount = 0
+                while errorcount <5:
+                    try:
+                        reports_to_mark = pd.read_csv(step1path + state + now.strftime("_%Y_%m_%d") + ".csv")
+                        marked_reports = mark_state_reported(reports_to_mark, sql_file)
+                        return marked_reports
+                    except Exception as e:
+                        print("Error marking state reported:")
+                        print(e)
+                        errorcount = errorcount + 1 
+                        continue
 
 
 
-                
-                
+if __name__=="__main__":
+    send_to_sftp()

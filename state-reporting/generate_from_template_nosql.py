@@ -13,11 +13,13 @@ import numpy as np
 from datetime import datetime
 import phonenumbers
 from state_reporting_export import prompt
-
+from itertools import compress
+import send_to_sftp
 
 def state_reports_pandas_export(state, startdate, enddate, positives, sql_file, test):
     
-       
+    state = state.upper()
+    
     endstr =  enddate.strftime("%Y-%m-%d %H:%M")
     # Database argument defaults to "FOLLOWER". Can be changed to "STAGING","DEV", or "PROD". Not case sensitive. Prod requires ignore_role = False.
     # Role will be set to "dist_15_application_group"
@@ -70,7 +72,13 @@ def state_reports_pandas_export(state, startdate, enddate, positives, sql_file, 
                 else:
                     print("No reports from {}".format(state))
 
-
+def oklahoma(df):
+    now = datetime.now()
+    df["File_created_date"] = now.strftime("%m/%d/%Y")
+    df["flatfile_version_no"] = now.strftime("V%Y-%m-%d_Results")
+    df["Patient_ID_type"]="Patient Internal"
+    return df
+    
 def split_area_code(df, state):
     if state in ["KS","MO"]:
         areacols = colsearch(df,["area_code"])
@@ -102,9 +110,10 @@ def abbrev_race(df, state):
     ethcol = colsearch(df, "ethnicity")[0]
     
     
-    df[ethcol] = df[racecol].copy()
+
     df[racecol] = df[racecol].replace(racedict).fillna("U")
     df[racecol] = ["U" if len(x) > 1 else x for x in df[racecol]]
+    df[ethcol] = df[racecol].copy()
     df[ethcol] = ["U" if x == "U" else nothispanic for x in df[ethcol]]
     return df
 
@@ -146,6 +155,8 @@ def reformat(df, state, phoneform, dateform):
     df = abbrev_race(df, state)
     df = dates(df, state, dateform)
     df = specimen_source(df, state)
+    if state.upper() == 'OK':
+        df = oklahoma(df)
     return df
 
 def get_template(state, this_dir):
@@ -173,10 +184,26 @@ if __name__=="__main__":
     this_file = os.path.abspath(__file__)
     this_dir = os.path.dirname(this_file)
     sql_file = os.path.join(this_dir, 'get_state_reports.sql')
+    templates_dir = os.path.join(this_dir + "\\templates")
+    templates = glob.glob(templates_dir+"/*")
+    
+    
+    stateswtemplates = []
+    for file in templates:
+        state = os.path.basename(file) \
+            .split(".")[0] \
+            .split("_")[0]
+            
+        stateswtemplates.append(state)
+    
+    
     
     for state in states:
-        export = state_reports_pandas_export(state, startdate, enddate, positives, sql_file, test).transpose()
-        try:
+        if state.lower() not in stateswtemplates:
+            print("No template for {}".format(state))
+            continue
+        else:
+            export = state_reports_pandas_export(state, startdate, enddate, positives, sql_file, test).transpose()
             template, phoneform, dateform = get_template(state, this_dir)
             df = template.merge(export, left_on = "phos_colname", right_index=True, how='left').sort_values(by="index")
             
@@ -186,10 +213,7 @@ if __name__=="__main__":
                             .replace(" ", np.nan)
                             
             df = reformat(df, state, phoneform, dateform)
-            filename = "/{}_{}.csv".format(state, enddate.strftime("%Y_%m_%d"))
-            df.to_csv(step3path + filename, index=False, encoding = "utf-8")
-            
-        except:
-            print("No template for {}".format(state))
-
-    
+            filename = step3path + "/{}_{}.csv".format(state.upper(), enddate.strftime("%Y_%m_%d"))
+            df.to_csv(filename, index=False, encoding = "utf-8")
+            print("to " + filename)
+            #marked_reports = send_to_sftp.send_to_sftp(filename)

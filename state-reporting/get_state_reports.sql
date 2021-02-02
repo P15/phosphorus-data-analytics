@@ -197,7 +197,8 @@ with dist_and_sub_dists as (
                  NULL AS "Hospitalized (Y/N)",
                  NULL AS "Congregate Care Resident (Y/N)",
                  NULL AS "Pregnant (Y/N)",
-		 age(PU.BIRTH_DATE) as "Patient Age",
+		 date_part('year', age(PU.BIRTH_DATE))::int as "Patient Age",
+		'L' as "L",
 		 'U' as "U",
 		'UNK' as "UNK",
 		 NULL AS "NULLCOLUMN"

@@ -106,6 +106,7 @@ def phonenumbers(df, file):
         # prevent the file from being accepted. The sad reality is that I sometimes go into elements and read the correct information off of
         # the req form if a particular patient comes up in every batch of records.
         for col in phonecols:
+            df[col] = [x.split("/")[0] if x is not np.nan else x for x in df[col]]
             newcol = []
             for idx, number in df[col].iteritems():
                 if type(number) == str:
