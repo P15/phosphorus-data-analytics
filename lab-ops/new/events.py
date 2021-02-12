@@ -10,11 +10,11 @@ import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
 from datetime import datetime, timedelta
-from common import myutils
+from common import utils
 
 def reviews_from_db(startdate, enddate, event_type_or_types):
     print("getting {} from db...".format(event_type_or_types))
-    engine=create_engine(os.environ["PROD_FOLLOWER_DATABASE_URL"])
+    engine=create_engine(os.environ["FOLLOWER_DB_URL"])
     
     if type(event_type_or_types)==list:
         eventstring = "{}".format([x for x in event_type_or_types]) \
@@ -70,7 +70,7 @@ def reviews_from_db(startdate, enddate, event_type_or_types):
 
 
 today = datetime.now().date()
-today = datetime(2021,1,17)
+#today = datetime(2021,1,17)
 enddate = today + timedelta(days=7-today.weekday())
 startdate = today - timedelta(days=today.weekday())
 daily = pd.DataFrame(index=[(startdate + timedelta(days=x)).strftime('%m/%d/%Y') for x in range((enddate-startdate).days + 1)])
@@ -107,12 +107,12 @@ for event, event_type in event_types.items():
         events_by_user=events_by_user.groupby(["day","fullname"]).sum()['count'].reset_index()
         events_by_user=events_by_user.pivot(index="fullname",columns="day",values="count")
         events_by_user=events_by_user.fillna(0)
-        #myutils.pd2gs("Events by User",event,events_by_user,include_index=True)
+        #utils.pd2gs("Events by User",event,events_by_user,include_index=True)
         
         if event in Accessioning_Events:
-            myutils.pd2gs(accessioningreport,event,events_by_user,include_index=True)
+            utils.pd2gs(accessioningreport,event,events_by_user,include_index=True)
         if event in Data_Entry_Events:
-            myutils.pd2gs(dataentryreport,event,events_by_user,include_index=True)
+            utils.pd2gs(dataentryreport,event,events_by_user,include_index=True)
     else:
         print("No {} events for this date range".format(event))
     

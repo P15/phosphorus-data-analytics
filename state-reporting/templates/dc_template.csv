@@ -1,0 +1,12 @@
+﻿dc_colname,colid,phoneform,dateform
+Last Name,21,dashes,%m/%d/%Y
+First Name,20,,
+Sex (F/M),23,,
+Date of Birth,22,,
+"if Applicable Role (Student, Staff, Faculty)",99,,
+ Phone Number,32,,
+Patient Street Address,26,,
+Patient State,28,,
+Test Type (PCR/Rapid-PCR/Antigen/Serology)?,12,,
+Sample Collection Date,49,,
+Test Result Date,18,,

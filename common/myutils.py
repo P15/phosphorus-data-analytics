@@ -11,6 +11,111 @@ from sqlalchemy import create_engine
 import numpy as np
 import psycopg2
 
+<<<<<<< Updated upstream:common/myutils.py
+=======
+
+"""
+This file is incredibly long. It is broken up into sections using lines of hash marks. The first section is relevent to state reporting and
+most other analytics projects. The Hubspot and Easypost sections are included as well. These sections contain methods that might be useful later.
+
+The hubspot section is especially useful for anything involving the hubspot API.
+"""
+
+
+############################################################
+def pd2gs(wkbook,sheet,df,clear=True,include_index=False,header=True):
+    gc = gspread.service_account(filename=os.environ["service_account_cred"])
+    ws = gc.open(wkbook)
+    try:
+        ws = ws.add_worksheet(sheet, rows=100, cols=20)
+        print("Creating {}".format(sheet))
+    except:
+        ws = ws.worksheet(sheet)
+    if clear:
+        ws.clear()
+    gd.set_with_dataframe(ws, df, include_index=include_index,include_column_header=header)
+    print("pushing {} rows, {} columns, to {} sheet of {}".format(len(df),len(df.columns),sheet,wkbook))
+
+def gs2pd(wkbook,sheet):
+    gc = gspread.service_account(filename=os.environ["service_account_cred"])
+    ws = gc.open(wkbook).worksheet(sheet)
+    return gd.get_as_dataframe(ws).dropna(axis=0,thresh=1).dropna(axis=1,thresh=1)
+
+    
+def UTC2EST(df, *newformat):
+    timecols=df.select_dtypes(include=["datetime64[ns]"])
+    for col in timecols:
+        df[col]=df[col] \
+                .dt.tz_localize("UTC") \
+                .dt.tz_convert("EST") \
+                .dt.tz_localize(None)
+        if newformat:
+            df[col]=[x.strftime(newformat[0]) if x is not pd.NaT else np.nan for x in df[col]]
+    return df
+
+
+def timedelta2time(df):
+    timecols=df.select_dtypes(include=["timedelta64[ns]"])
+    for col in timecols:
+        df[col]=[x.split(" ")[2].split(".")[0] if x != "NaT" else "" for x in df[col].astype(str)]
+    return df
+
+
+def colsearch(df,stringorlist,exclude=None):
+    if type(stringorlist)==list:
+        cols=[]
+        for col in df:
+            if any(term in col.lower() for term in stringorlist):
+                cols.append(col)
+    else:
+        cols = list(df.columns[[stringorlist in col.lower() for col in df]])
+    
+    if type(exclude)!=list:
+        exclude=[exclude]
+        
+    for term in exclude:
+        if term in cols: cols.remove(term)
+        
+    return cols
+
+def liststringsearch(alist,astring):
+    for element in alist:
+        if astring in element:
+            return element
+
+def trymany(func, *args, timestotry=3):
+    errorcount = 0
+    while errorcount < timestotry:
+        try:
+            # Not sure how this would work if there were multiple values to unpack
+            output = func(*args)
+            return output
+            break
+        except Exception as e:
+            errorcount = errorcount + 1
+            print("Failed {} {} time(s) due to: {}".format(func.__name__, errorcount, e))
+            continue
+        
+###########################################################
+def execute_sql(conn, *argv):
+    """ Execute any SQL statement, with returning the number of records impacted by the statement """
+    with conn.cursor() as cur:
+        cur.execute(*argv)
+        return cur.rowcount
+
+
+def get_db_connection(ignore_role=False,database="FOLLOWER"):
+    """ Create connection to the database using environment variables for the DATABASE_URL and DISTRIBUTOR_ID """
+    database=database.upper()
+    connection = psycopg2.connect(os.environ["{}_DB_URL".format(database)])
+    if not ignore_role:
+        execute_sql(connection, "SET ROLE = 'dist_%(distributor_id)s_application_group';", {'distributor_id': 15})
+    return connection
+
+
+
+
+>>>>>>> Stashed changes:common/utils.py
 ###################HUBSPOT##############################
 
 def get_using_url(url,proplist,prod=False):

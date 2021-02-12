@@ -87,19 +87,31 @@ with dist_and_sub_dists as (
                
                  'BioRad CFX384 Touch Real-Time PCR Detection System' AS "Test Instrument",
                  R.RESULT AS "Result",
-                 NULL AS "Result Status Code (NYS)",
+                 'F' AS "Result Status Code (NYS)",
                  R.SENT_DATE AS "Result Date and Time",
                  PU.ID AS "Patient ID",
                  PU.FIRST_NAME AS "Patient First Name",
                  PU.LAST_NAME AS "Patient Last Name",
                  PU.BIRTH_DATE AS "Patient Date of Birth",
+<<<<<<< Updated upstream
                  PU.GENDER AS "Patient Sex",
                  array_to_string(array_agg(ETH.NAME), ',', ' ') AS "Patient Race",
                  NULL AS "Patient Ethnicity",
+=======
+			case
+				when PU.GENDER = 'male' then 'M'
+				when PU.GENDER = 'female' then 'F'
+				else 'U'
+			end
+			AS "Patient Sex",		 
+
+                 array_to_string(array_agg(ETH.NAME), ',', ' ') as "Patient Race",
+                 'not hispanic or latino' AS "Patient Ethnicity",
+>>>>>>> Stashed changes
                  CONCAT(L.ADDRESS_1,' ',L.ADDRESS_2) AS "Patient Street Address",
                  L.CITY AS "Patient City",
                  L.STATE AS "Patient State",
-                 L.ZIP AS "Patient Zip",
+                 split_part(L.ZIP,'-',1) AS "Patient Zip",
                  NULL AS "Patient County",
                 case
                     when L.COUNTRY = 'US' then 'United States of America'
@@ -114,6 +126,7 @@ with dist_and_sub_dists as (
 					else pu.phone
 		 		end
 						AS "Patient Phone",
+<<<<<<< Updated upstream
                  C.NAME AS "Ordering Facility",
 				CASE
 					WHEN pl.address is null then '400 Plaza Drive Suite 401'
@@ -132,13 +145,76 @@ with dist_and_sub_dists as (
                  PL.STATE AS "Provider State",
                  PL.ZIP AS "Provider Zip",
                  PL.provider_phone AS "Provider Phone",
+=======
+                 split_part(C.NAME, '/',1) AS "Ordering Facility",
+                 CASE
+			WHEN (pl.address is null or pl.address = ' ') then '400 Plaza Drive Suite 401'
+			else pl.address
+		 end
+			AS "Ordering Facility Address",
+
+		 CASE
+			WHEN (pl.address is null or pl.address = ' ') then 'Secaucus'
+			else pl.city
+		 end
+                	AS "Ordering Facility City",
+
+		 CASE
+			WHEN (pl.address is null or pl.address = ' ') then 'NJ'
+			else pl.state
+		 end
+                	AS "Ordering Facility State",
+		 CASE
+			WHEN (pl.address is null or pl.address = ' ') then '07094'
+			else split_part(pl.zip,'-',1)
+		 end
+                	AS "Ordering Facility Zip",
+		 CASE
+					WHEN (PL.PROVIDER_PHONE IS NULL AND C.PHONE IS NULL) THEN '855-746-7423'
+					WHEN C.PHONE IS NULL THEN split_part(PL.PROVIDER_PHONE, ',' ,1)
+					else split_part(C.phone, ',',1)
+		 end
+			as "Ordering Facility Phone",
+                 PR.FIRST_NAME AS "Provider First Name",
+                 PR.LAST_NAME AS "Provider Last Name",
+                 PR.TITLE AS "Provider Name Suffix",
+                 CASE
+			WHEN (pl.address is null or pl.address = ' ') then '400 Plaza Drive Suite 401'
+			else pl.address
+		 end
+			AS "Provider Address",
+
+		 CASE
+			WHEN (pl.address is null or pl.address = ' ') then 'Secaucus'
+			else pl.city
+		 end
+                	AS "Provider City",
+
+		 CASE
+			WHEN (pl.address is null or pl.address = ' ') then 'NJ'
+			else pl.state
+		 end
+                	AS "Provider State",
+		 CASE
+			WHEN (pl.address is null or pl.address = ' ') then '07094'
+			else split_part(pl.zip,'-',1)
+		 end
+                	AS "Provider Zip",
+
+                 CASE
+					WHEN (PL.PROVIDER_PHONE IS NULL AND C.PHONE IS NULL) THEN '855-746-7423'
+					WHEN PL.PROVIDER_PHONE IS NULL THEN split_part(C.PHONE, ',' ,1)
+					else split_part(pl.provider_phone, ',',1)
+		 end
+			as "Provider Phone",
+>>>>>>> Stashed changes
                  PR.NPI AS "Provider NPI",
                  S.BARCODE AS "Specimen ID / Accession Number",
                  S.COLLECTION_DATE AS "Collection Date and Time",
                  S.COLLECTION_TYPE AS "Specimen Type",
                  CASE
-                     when s.collection_type = 'Saliva' then 'Mouth'
-                     when s.collection_type = 'Swab' then 'Nasopharynx'
+                     when s.collection_type = 'Saliva' then 'Pharyngeal structure'
+                     when s.collection_type = 'Swab' then 'Nasopharyngeal structure'
                      end
                  AS "Specimen Source/Site",
                  NULL AS "Notes",
@@ -147,7 +223,52 @@ with dist_and_sub_dists as (
                  NULL AS "Symptom Onset Date",
                  NULL AS "Hospitalized (Y/N)",
                  NULL AS "Congregate Care Resident (Y/N)",
+<<<<<<< Updated upstream
                  NULL AS "Pregnant (Y/N)"
+=======
+                 NULL AS "Pregnant (Y/N)",
+
+		 date_part('year', age(PU.BIRTH_DATE))::int as "Patient Age",
+		 case
+			when r.result = 'Positive' then 'A'
+			when r.result = 'Negative' then 'N'
+			else ''
+		 end
+		as "Test flag",
+		case
+			when r.result = 'Positive' then '10828004'
+			when r.result = 'Negative' then '260385009'
+			else '419984006'
+		 end
+		as "Result SNOMED",
+		'Negative' as "Reference Range",
+		CONCAT(pr.first_name,' ',pr.last_name) AS "Provider Full Name",
+		r.id as "Report ID",
+		'XX' as "Patient Identifier Type",
+                 CASE
+                     when s.collection_type = 'Saliva' then '258529004'
+                     when s.collection_type = 'Swab' then '258500001'
+			else '258529004'
+                     end
+                 AS "Specimen Source/Site SNOMED",
+		'SCT' as "SCT",
+
+                 CASE
+                     when s.collection_type = 'Saliva' then '54066008'
+                     when s.collection_type = 'Swab' then '71836000'
+			else '54066008'
+                     end
+                 AS "Specimen Source/Site SNOMED (Alternative)",
+		'LN' as "LN",
+		'1' as "1",
+		'!!' as "!!",
+		'L' as "L",
+		 'U' as "U",
+		'UNK' as "UNK",
+		 NULL AS "NULLCOLUMN",
+		'ECLRS' AS "ECLRS"
+		
+>>>>>>> Stashed changes
     from reports_to_work_with
              join reports r on reports_to_work_with.report_id = r.id
              join distributors on r.cached_distributor_id = distributors.id

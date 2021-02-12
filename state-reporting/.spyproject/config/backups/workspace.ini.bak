@@ -1,0 +1,10 @@
+[workspace]
+restore_data_on_startup = True
+save_data_on_exit = True
+save_history = True
+save_non_project_files = False
+
+[main]
+version = 0.2.0
+recent_files = ['send-efaxes.py', 'send_to_sftp.py', '..\\..\\Python\\TAT-Dashboards\\Anatomy of TAT.py', '..\\..\\Python\\TAT-Dashboards\\anatomy of tat 2.py', '..\\..\\Python\\hubspot-deal-manager\\EOWreport.py', 'state_reporting_export.py', 'make-ready-to-send.py', 'generate_from_template_nosql.py']
+
