@@ -93,11 +93,9 @@ with dist_and_sub_dists as (
                  PU.FIRST_NAME AS "Patient First Name",
                  PU.LAST_NAME AS "Patient Last Name",
                  PU.BIRTH_DATE AS "Patient Date of Birth",
-<<<<<<< Updated upstream
                  PU.GENDER AS "Patient Sex",
                  array_to_string(array_agg(ETH.NAME), ',', ' ') AS "Patient Race",
                  NULL AS "Patient Ethnicity",
-=======
 			case
 				when PU.GENDER = 'male' then 'M'
 				when PU.GENDER = 'female' then 'F'
@@ -107,7 +105,6 @@ with dist_and_sub_dists as (
 
                  array_to_string(array_agg(ETH.NAME), ',', ' ') as "Patient Race",
                  'not hispanic or latino' AS "Patient Ethnicity",
->>>>>>> Stashed changes
                  CONCAT(L.ADDRESS_1,' ',L.ADDRESS_2) AS "Patient Street Address",
                  L.CITY AS "Patient City",
                  L.STATE AS "Patient State",
@@ -126,26 +123,6 @@ with dist_and_sub_dists as (
 					else pu.phone
 		 		end
 						AS "Patient Phone",
-<<<<<<< Updated upstream
-                 C.NAME AS "Ordering Facility",
-				CASE
-					WHEN pl.address is null then '400 Plaza Drive Suite 401'
-					else pl.address
-				 end
- 						 AS "Ordering Facility Address",
-                 PL.CITY AS "Ordering Facility City",
-                 PL.STATE AS "Ordering Facility State",
-                 PL.ZIP AS "Ordering Facility Zip",
-                 C.PHONE AS "Ordering Facility Phone",
-                 PR.FIRST_NAME AS "Provider First Name",
-                 PR.LAST_NAME AS "Provider Last Name",
-                 PR.TITLE AS "Provider Name Suffix",
-                 pl.address AS "Provider Address",
-                 PL.CITY AS "Provider City",
-                 PL.STATE AS "Provider State",
-                 PL.ZIP AS "Provider Zip",
-                 PL.provider_phone AS "Provider Phone",
-=======
                  split_part(C.NAME, '/',1) AS "Ordering Facility",
                  CASE
 			WHEN (pl.address is null or pl.address = ' ') then '400 Plaza Drive Suite 401'
@@ -207,7 +184,6 @@ with dist_and_sub_dists as (
 					else split_part(pl.provider_phone, ',',1)
 		 end
 			as "Provider Phone",
->>>>>>> Stashed changes
                  PR.NPI AS "Provider NPI",
                  S.BARCODE AS "Specimen ID / Accession Number",
                  S.COLLECTION_DATE AS "Collection Date and Time",
@@ -223,9 +199,6 @@ with dist_and_sub_dists as (
                  NULL AS "Symptom Onset Date",
                  NULL AS "Hospitalized (Y/N)",
                  NULL AS "Congregate Care Resident (Y/N)",
-<<<<<<< Updated upstream
-                 NULL AS "Pregnant (Y/N)"
-=======
                  NULL AS "Pregnant (Y/N)",
 
 		 date_part('year', age(PU.BIRTH_DATE))::int as "Patient Age",
@@ -268,7 +241,6 @@ with dist_and_sub_dists as (
 		 NULL AS "NULLCOLUMN",
 		'ECLRS' AS "ECLRS"
 		
->>>>>>> Stashed changes
     from reports_to_work_with
              join reports r on reports_to_work_with.report_id = r.id
              join distributors on r.cached_distributor_id = distributors.id
