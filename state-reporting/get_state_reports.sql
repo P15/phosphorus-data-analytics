@@ -80,12 +80,12 @@ with dist_and_sub_dists as (
                      end
                      AS "LOINC Code",
                  CASE
-                     when s.collection_type = 'Saliva' then 'Saliva specimen to test SARS-CoV-2 N gene'
-                     when s.collection_type = 'Swab' then 'Respiratory specimen to test SARS-CoV-2 N gene'
+                     when s.collection_type = 'Saliva' then 'SARS-CoV-2 (COVID-19) N gene [Presence] in Saliva (oral fluid) by NAA with probe detection'
+                     when s.collection_type = 'Swab' then 'SARS-CoV-2 (COVID-19) N gene [Presence] in Respiratory specimen by NAA with probe detection'
                      end
                      AS "LOINC Description",
                
-                 'BioRad CFX384 Touch Real-Time PCR Detection System' AS "Test Instrument",
+                 'Phosphorus COVID-19 RT-qPCR Test' AS "Test Instrument",
                  R.RESULT AS "Result",
                  'F' AS "Result Status Code (NYS)",
                  R.SENT_DATE AS "Result Date and Time",
@@ -93,9 +93,6 @@ with dist_and_sub_dists as (
                  PU.FIRST_NAME AS "Patient First Name",
                  PU.LAST_NAME AS "Patient Last Name",
                  PU.BIRTH_DATE AS "Patient Date of Birth",
-                 PU.GENDER AS "Patient Sex",
-                 array_to_string(array_agg(ETH.NAME), ',', ' ') AS "Patient Race",
-                 NULL AS "Patient Ethnicity",
 			case
 				when PU.GENDER = 'male' then 'M'
 				when PU.GENDER = 'female' then 'F'
@@ -183,7 +180,7 @@ with dist_and_sub_dists as (
 					WHEN PL.PROVIDER_PHONE IS NULL THEN split_part(C.PHONE, ',' ,1)
 					else split_part(pl.provider_phone, ',',1)
 		 end
-			as "Provider Phone",
+			as "Provider Phone Number",
                  PR.NPI AS "Provider NPI",
                  S.BARCODE AS "Specimen ID / Accession Number",
                  S.COLLECTION_DATE AS "Collection Date and Time",

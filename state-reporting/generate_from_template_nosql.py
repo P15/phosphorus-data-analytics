@@ -174,6 +174,7 @@ def phonenums(df, state, phoneform):
     df[phonecols] = df[phonecols].fillna("855-746-7423")
     for col in phonecols:
         df[col] = [x.split("/")[0] if x is not np.nan else x for x in df[col]]
+        df[col] = [x.split(",")[0] if x is not np.nan else x for x in df[col]]
         df[col]
         if phoneform == "dashes":
             df[col] = [phonenumbers.format_number(phonenumbers.parse(num,"US") , phonenumbers.PhoneNumberFormat.INTERNATIONAL).replace("+1","").strip() for num in df[col]]
@@ -184,7 +185,7 @@ def phonenums(df, state, phoneform):
     return df
         
 def dates(df, state, dateform):
-    if "WV" not in state:
+    if "WV" not in state.upper():
         datecols = colsearch(df,["date", "dt", "dob"]) # West Virginia has a case that breaks things when "dt" is searched for
     else:
         datecols = colsearch(df,["date", "dob"])
