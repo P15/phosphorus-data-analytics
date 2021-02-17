@@ -1,6 +1,6 @@
 # phosphorus-data-analytics
 
-Maintained by Jacob @jacobb717. Used to power analytics projects.
+Maintained by Jacob @JacobBayer. Used to power analytics projects.
 
 State reporting system stored here also.
 
