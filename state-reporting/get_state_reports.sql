@@ -85,7 +85,7 @@ with dist_and_sub_dists as (
                      end
                      AS "LOINC Description",
                
-                 'Phosphorus COVID-19 RT-qPCR Test' AS "Test Instrument",
+                 'Phosphorus COVID-19 RT-qPCR Test_Phosphorus Diagnostics LLC_EUA' AS "Test Instrument",
                  R.RESULT AS "Result",
                  'F' AS "Result Status Code (NYS)",
                  R.SENT_DATE AS "Result Date and Time",
@@ -99,8 +99,11 @@ with dist_and_sub_dists as (
 				else 'U'
 			end
 			AS "Patient Sex",		 
-
-                 array_to_string(array_agg(ETH.NAME), ',', ' ') as "Patient Race",
+		CASE
+			when array_to_string(array_agg(ETH.NAME), ',', ' ') = ' ' then 'Unknown'
+			else array_to_string(array_agg(ETH.NAME), ',', ' ')
+		end
+		AS "Patient Race",
                  'not hispanic or latino' AS "Patient Ethnicity",
                  CONCAT(L.ADDRESS_1,' ',L.ADDRESS_2) AS "Patient Street Address",
                  L.CITY AS "Patient City",
@@ -229,6 +232,7 @@ with dist_and_sub_dists as (
 			else '54066008'
                      end
                  AS "Specimen Source/Site SNOMED (Alternative)",
+		concat(pr.last_name,', ',pr.first_name) as "Provider last,first",
 		'LN' as "LN",
 		'1' as "1",
 		'!!' as "!!",

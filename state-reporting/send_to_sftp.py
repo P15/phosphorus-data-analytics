@@ -189,9 +189,11 @@ if __name__=="__main__":
     exclusionlist = ["NM"]
     
     
-    
-    with open("send_log","r") as logfile:
-        sentfiles = logfile.read()
+    if os.path.exists("send_log"):
+        with open("send_log","r") as logfile:
+            sentfiles = logfile.read()
+    else:
+        sentfiles = "No previous export"
     
     for file in paths:
         

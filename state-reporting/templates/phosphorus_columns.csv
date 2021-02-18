@@ -68,6 +68,7 @@ Patient Identifier Type,65
 Specimen Source/Site SNOMED,66
 SCT,67
 Specimen Source/Site SNOMED (Alternative),68
+"Provider last,first",69
 LN,93
 1,94
 !!,95

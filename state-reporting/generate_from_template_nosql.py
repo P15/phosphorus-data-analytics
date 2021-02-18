@@ -123,7 +123,7 @@ def oklahoma(df):
     df["flatfile_version_no"] = "V2020-07-01_Results"
     df["Patient_ID_type"]="Patient Internal ID"
     df["Patient_age_units"] =  "Years"
-    #df["Patient_race"] = ["Asked but no answer / unknown" if race=="Unknown" else race for race in df["Patient_race"]]
+    df["Patient_race"] = ["Asked but no answer / unknown" if race=="Unknown" else race for race in df["Patient_race"]]
     df["Patient_ethnicity"] = ["Patient Declines" if race=="Patient Declines" else "Not Hispanic or Latino" for race in df["Patient_race"]]
     df["Patient_gender"] = ["Male" if x == "M" else x for x in df["Patient_gender"]]
     df["Patient_gender"] = ["Female" if x == "F" else "Unknown" for x in df["Patient_gender"]]
@@ -162,10 +162,14 @@ def abbrev_race(df, state):
     racecol = colsearch(df, "race")[0]
     ethcol = colsearch(df, "ethnic")[0] # May need to change this to eth
     
-    df[racecol] = df[racecol].replace(racedict).fillna("U")
-    df[racecol] = ["U" if len(x) > 1 else x for x in df[racecol]]
-    df[ethcol] = df[racecol].copy()
-    df[ethcol] = ["U" if x == "U" else nothispanic for x in df[ethcol]]
+    if state.upper() != "MD":
+        df[racecol] = df[racecol].replace(racedict).fillna("U")
+        df[racecol] = ["U" if len(x) > 1 else x for x in df[racecol]]
+        df[ethcol] = df[racecol].copy()
+        df[ethcol] = ["U" if x == "U" else nothispanic for x in df[ethcol]]
+    else:
+        df[ethcol] = df[racecol].copy()
+        df[ethcol] = ["U" if x == "Unknown" else nothispanic for x in df[ethcol]]
     return df
 
 def phonenums(df, state, phoneform):
@@ -241,10 +245,11 @@ def reformat(df, state, phoneform, dateform):
         df = oklahoma(df)
     elif state.upper() == 'ID':
         df["Patient Race"] = df["Patient Race"].fillna("asked but unknown")
-    elif state.upper() not in ["DC","ND","MD"]:
+    elif state.upper() not in ["DC","ND"]:
         df = abbrev_race(df, state)
         
-
+    if state.upper() == "IL":
+        pass
         
     df = unique_codes(df, state)
 
@@ -332,5 +337,5 @@ if __name__=="__main__":
             filename = step3path + "/{}_{}.csv".format(state.upper(), enddate.strftime("%Y_%m_%d"))
             write_csv(df, filename)
             print("to " + filename)
-            #send_to_sftp.send_to_sftp(filename)
+            # send_to_sftp.send_to_sftp(filename)
             #mark_state_reported(reports_to_mark)
