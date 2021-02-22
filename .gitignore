@@ -1,6 +1,8 @@
 
 *.pyc
+
 state-reporting/send_log
 state-reporting/state_reporting_export.spec
 state-reporting/send_log
 state-reporting/last_export
+
