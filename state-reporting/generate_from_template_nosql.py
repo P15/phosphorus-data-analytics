@@ -156,7 +156,7 @@ def abbrev_race(df, state):
                 "Unspecified" : "U",
                 " " : "U"}
     
-    nstates = ["MO","MD"]
+    nstates = ["MO","MD", "OR"]
     nothispanic = "N" if state in nstates else "NH"        
     
     racecol = colsearch(df, "race")[0]
@@ -247,9 +247,9 @@ def reformat(df, state, phoneform, dateform):
         df["Patient Race"] = df["Patient Race"].fillna("asked but unknown")
     elif state.upper() not in ["DC","ND"]:
         df = abbrev_race(df, state)
-        
+    
     if state.upper() == "IL":
-        pass
+        df = df.append(pd.Series(), ignore_index=True)
         
     df = unique_codes(df, state)
 
