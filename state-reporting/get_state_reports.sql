@@ -123,7 +123,11 @@ with dist_and_sub_dists as (
 					else pu.phone
 		 		end
 						AS "Patient Phone",
-                 split_part(C.NAME, '/',1) AS "Ordering Facility",
+                 case 
+			when (l.state = 'IL' and s.collection_type = 'Saliva') then concat(split_part(C.NAME, '/',1) , ' -- self collection')
+			else split_part(C.NAME, '/',1) 
+		 end
+			AS "Ordering Facility",
                  CASE
 			WHEN (pl.address is null or pl.address = ' ') then '400 Plaza Drive Suite 401'
 			else pl.address
@@ -219,9 +223,9 @@ with dist_and_sub_dists as (
 		r.id as "Report ID",
 		'XX' as "Patient Identifier Type",
                  CASE
-                     when s.collection_type = 'Saliva' then '258529004'
+                     when s.collection_type = 'Saliva' then '119342007'
                      when s.collection_type = 'Swab' then '258500001'
-			else '258529004'
+			else '119342007'
                      end
                  AS "Specimen Source/Site SNOMED",
 		'SCT' as "SCT",
