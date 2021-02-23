@@ -16,30 +16,7 @@ import time
 from dateutil.parser import parse
 from common import utils
 
-def renameOH(file, step3path, now):
-    newfilename = step3path + "Phosphorus Diagnostics LLC_{}.csv".format(now.strftime("%Y%m%d"))
-    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
-    os.remove(file)
-    return newfilename
-    
-def renameCA(file, step3path, now):
-    newfilename = step3path + "PhosphorusDiagnostics_{}_1.csv".format(now.strftime("%Y%m%d"))
-    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
-    os.remove(file)
-    return newfilename
 
-def renameTX(file, step3path, now):
-    newfilename = step3path + "PhosphorusDiagnostics_31D2123554_{}.csv".format(now.strftime("%Y%m%d"))
-    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
-    os.remove(file)
-    return newfilename
-
-
-def renameOK(file, step3path, now):
-    newfilename = step3path + "PhosphorusDiagnostics_{}.csv".format(now.strftime("%Y%m%d"))
-    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
-    os.remove(file)
-    return newfilename
     
 
 def warning_prompt(file, creds, remotedir):
@@ -101,6 +78,34 @@ def submit_to_remotedir(srv, file, remotedir):
         srv.put(file)
         send_success = any([remotefilename in file for remotefilename in srv.listdir()])
     return send_success
+
+
+# Started as a one-off request and multiplied. It works and I'll make more elegant later.
+def renameOH(file, step3path, now):
+    newfilename = step3path + "Phosphorus Diagnostics LLC_{}.csv".format(now.strftime("%Y%m%d"))
+    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
+    os.remove(file)
+    return newfilename
+    
+def renameCA(file, step3path, now):
+    newfilename = step3path + "PhosphorusDiagnostics_{}_1.csv".format(now.strftime("%Y%m%d"))
+    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
+    os.remove(file)
+    return newfilename
+
+def renameTX(file, step3path, now):
+    newfilename = step3path + "PhosphorusDiagnostics_31D2123554_{}.csv".format(now.strftime("%Y%m%d"))
+    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
+    os.remove(file)
+    return newfilename
+
+
+def renameOK(file, step3path, now):
+    newfilename = step3path + "PhosphorusDiagnostics_{}.csv".format(now.strftime("%Y%m%d"))
+    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
+    os.remove(file)
+    return newfilename
+
 
 def send_to_sftp(file):
     sftpcreds=pd.read_csv(os.environ["SFTP_credfile"], index_col=0)
