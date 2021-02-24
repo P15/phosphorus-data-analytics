@@ -248,8 +248,6 @@ def reformat(df, state, phoneform, dateform):
     elif state.upper() not in ["DC","ND"]:
         df = abbrev_race(df, state)
     
-    if state.upper() == "IL":
-        df = df.append(pd.Series(), ignore_index=True)
         
     df = unique_codes(df, state)
 
