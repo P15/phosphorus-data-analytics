@@ -216,6 +216,7 @@ if __name__=="__main__":
     
         try:
             send_to_sftp(file)
-        except:
+        except Exception as e:
+            print(e)
             continue
  
