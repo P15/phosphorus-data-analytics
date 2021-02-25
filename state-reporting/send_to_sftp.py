@@ -101,7 +101,7 @@ def renameTX(file, step3path, now):
 
 
 def renameOK(file, step3path, now):
-    newfilename = step3path + "PhosphorusDiagnostics_{}.csv".format(now.strftime("%Y%m%d"))
+    newfilename = step3path + "PhosphorusDiagnostics_OK_{}.csv".format(now.strftime("%Y%m%d"))
     pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
     os.remove(file)
     return newfilename
@@ -126,7 +126,7 @@ def send_to_sftp(file):
         if state == "TX":
             file = renameTX(file, step3path, now)
         if state == "OK":
-            file = renameTX(file, step3path, now)
+            file = renameOK(file, step3path, now)
         
         if creds["prod"]:
             remotedir = creds.proddir
