@@ -191,9 +191,9 @@ if __name__=="__main__":
     
     now = datetime.now()
     now=parse(input("Day to send [MM/DD/YYYY]: ") or now.strftime("%m/%d/%Y"))
-    folderpath = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(now.strftime("%B/%Y_%m_%d"))
-    step1path = folderpath+"/Step 1 State CSV Files/"
-    step3path = folderpath+"/Step 3 Ready to Send/"
+    folderpath = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(now.strftime("%B %Y/%Y_%m_%d"))
+    step1path = folderpath+"/Exports from database"
+    step3path = folderpath+"/CSVs for ELR/"
     
     paths = glob.glob(step3path+"*")
     

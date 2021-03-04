@@ -7,3 +7,5 @@ state-reporting/send_log
 state-reporting/last_export
 
 state-reporting/send_log
+state-reporting/last_export
+state-reporting/send_log

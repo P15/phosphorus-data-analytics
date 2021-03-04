@@ -75,10 +75,10 @@ def state_reports_export(state, startdate, enddate, positives, sql_file, step1pa
 
 # Creates the three folders representing the 3-step process we are currently using. Returns the step 1 path since this script writes to that location.
 def initialize_folders(enddate):
-    folderpath = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(enddate.strftime("%B/%Y_%m_%d"))
-    step1path = folderpath+"/Step 1 State CSV Files"
-    step2path = folderpath+"/Step 2 Transformed XLSX and PDF Files"
-    step3path = folderpath+"/Step 3 Ready to Send"
+    folderpath = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(enddate.strftime("%B %Y/%Y_%m_%d"))
+    step1path = folderpath+"/Exports from database"
+    step2path = folderpath+"/PDFs to fax"
+    step3path = folderpath+"/CSVs for ELR"
     dirslist = [step1path,step2path,step3path]
     for path in dirslist:
         if not os.path.exists(path):
@@ -166,7 +166,7 @@ if __name__=="__main__":
     step1path = initialize_folders(enddate)     
     
     if test:
-        step1path = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(enddate.strftime("%B/")) + "test"
+        step1path = os.environ["gdrive_state_reporting_local_location"] + "/{}".format(enddate.strftime("%B %Y/")) + "test"
     
     this_file = os.path.abspath("C:/Users/Jacob-Windows/Documents/Phosphorus/phosphorus-data-analytics/state-reporting/state-reporting.py")
     #this_file = os.path.abspath(__file__)

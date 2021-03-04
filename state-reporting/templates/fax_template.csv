@@ -1,0 +1,18 @@
+﻿fax_colname,colid,phoneform,dateform
+Result,16,dashes,%m/%d/%Y
+Ordering Facility,33,,
+Patient First Name,20,,
+Patient Last Name,21,,
+DOB,22,,
+Gender,23,,
+Patient Street Address,26,,
+Patient City,27,,
+State,28,,
+Zip,29,,
+Patient Phone,32,,
+Provider First Name,39,,
+Provider Last Name,40,,
+Provider NPI,47,,
+Accession Number,48,,
+Collection Date and Time,49,,
+Report Date And Time,18,,

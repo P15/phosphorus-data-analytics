@@ -32,8 +32,9 @@ def pd2gs(wkbook,sheet,df,clear=True,include_index=False,header=True):
         ws = ws.worksheet(sheet)
     if clear:
         ws.clear()
-    gd.set_with_dataframe(ws, df, include_index=include_index,include_column_header=header)
     print("pushing {} rows, {} columns, to {} sheet of {}".format(len(df),len(df.columns),sheet,wkbook))
+    gd.set_with_dataframe(ws, df, include_index=include_index,include_column_header=header)
+
 
 def gs2pd(wkbook,sheet):
     gc = gspread.service_account(filename=os.environ["service_account_cred"])

@@ -25,8 +25,8 @@ app_password = os.environ["gmail_app_pass"]
 
 now = datetime.now()
 day = parse(input("Day to send [MM/DD/YYYY]: ") or now.strftime("%m/%d/%Y %H:%S"))
-folderpath="C:/Users/Jacob-Windows/Google Drive/State Reporting/{}".format(day.strftime("%B/%Y_%m_%d"))
-inpath=folderpath+"/Step 2 Transformed XLSX and PDF Files"
+folderpath="C:/Users/Jacob-Windows/Google Drive/State Reporting/{}".format(day.strftime("%B %Y/%Y_%m_%d"))
+inpath=folderpath+"/PDFs to fax"
 dirslist=[folderpath,inpath]
 for path in dirslist:
     if not os.path.exists(path):
