@@ -83,28 +83,66 @@ def submit_to_remotedir(srv, file, remotedir):
 # Started as a one-off request and multiplied. It works and I'll make more elegant later.
 def renameOH(file, step3path, now):
     newfilename = step3path + "Phosphorus Diagnostics LLC_{}.csv".format(now.strftime("%Y%m%d"))
-    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
+    df = pd.read_csv(file, dtype=str)
+    df = add_leading_zeros(df,file)
+    df.to_csv(newfilename,index=False,encoding="utf-8")
     os.remove(file)
     return newfilename
     
 def renameCA(file, step3path, now):
     newfilename = step3path + "PhosphorusDiagnostics_{}_1.csv".format(now.strftime("%Y%m%d"))
-    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
+    df = pd.read_csv(file, dtype=str)
+    df = add_leading_zeros(df,file)
+    df.to_csv(newfilename,index=False,encoding="utf-8")
     os.remove(file)
     return newfilename
 
 def renameTX(file, step3path, now):
     newfilename = step3path + "PhosphorusDiagnostics_31D2123554_{}.csv".format(now.strftime("%Y%m%d"))
-    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
+    df = pd.read_csv(file, dtype=str)
+    df = add_leading_zeros(df,file)
+    df.to_csv(newfilename,index=False,encoding="utf-8")
     os.remove(file)
     return newfilename
 
 
 def renameOK(file, step3path, now):
     newfilename = step3path + "PhosphorusDiagnostics_OK_{}.csv".format(now.strftime("%Y%m%d"))
-    pd.read_csv(file).to_csv(newfilename,index=False,encoding="utf-8")
+    df = pd.read_csv(file, dtype=str)
+    df = add_leading_zeros(df,file)
+    df.to_csv(newfilename,index=False,encoding="utf-8")
     os.remove(file)
     return newfilename
+
+
+
+def add_leading_zeros(df,file):
+    
+    state = os.path.basename(file) \
+            .split(".")[0] \
+            .split("_")[0]
+    
+    zipcols = utils.colsearch(df,"zip")
+    
+    # Pandas' read_excel function drops the leading zero on zip codes and I can't find a way to avoid that.
+    # This adds that leading zero back, if it is missing. 
+    for col in zipcols:
+        newcol = []
+        for code in df[col]:
+            if (code is not np.nan) & (code != state):
+                if (len(code)==4):
+                    newcol.append("0"+code)
+                elif len(code) < 4:
+                    newcol.append(np.nan)
+                else:
+                    newcol.append(code)
+            elif code == state:
+                newcol.append(np.nan)
+            else:
+                newcol.append(code)
+        df[col] = newcol
+    df[zipcols] = df[zipcols].replace("0","")
+    return df
 
 
 def send_to_sftp(file):
