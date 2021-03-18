@@ -261,6 +261,8 @@ def reformat(df, state, phoneform, dateform, fax=False):
             df = oklahoma(df)
         elif state.upper() == 'ID':
             df["Patient Race"] = df["Patient Race"].fillna("asked but unknown")
+        elif state.upper() == 'UT':
+            df['state'] = 'Utah'
         elif state.upper() not in ["DC","ND"]:
             df = abbrev_race(df, state)
         
@@ -286,6 +288,7 @@ def get_template(state, this_dir, fax=False):
 if __name__=="__main__":  
     
     startdate, enddate, states, positives, lastexport, test = prompt()
+
     
     step1path, step2path, step3path = initialize_folders(enddate)
            

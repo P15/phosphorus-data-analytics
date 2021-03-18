@@ -114,6 +114,7 @@ States should be entered as a two letter abbreviation.
             lastexport = file.read()
     except:
         print("It looks like this is your first time running this program on your machine.")
+        lastexport = None
         
     states = []
     #startdate = parse(input("Starting Sent Date [m/d/YYYY]: ") or (now - timedelta(days=7)).strftime("%m/%d/%Y"))
