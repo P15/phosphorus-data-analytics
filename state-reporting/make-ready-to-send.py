@@ -16,33 +16,6 @@ from common.utils import colsearch
 from dateutil.parser import parse
         
 
-def add_leading_zeros(df,file):
-    
-    state = os.path.basename(file) \
-            .split(".")[0] \
-            .split("_")[0]
-    
-    zipcols=colsearch(df,"zip")
-    
-    # Pandas' read_excel function drops the leading zero on zip codes and I can't find a way to avoid that.
-    # This adds that leading zero back, if it is missing. 
-    for col in zipcols:
-        newcol = []
-        for code in df[col]:
-            if (code is not np.nan) & (code != state):
-                if (len(code)==4):
-                    newcol.append("0"+code)
-                elif len(code) < 4:
-                    newcol.append(np.nan)
-                else:
-                    newcol.append(code)
-            elif code == state:
-                newcol.append(np.nan)
-            else:
-                newcol.append(code)
-        df[col] = newcol
-    df[zipcols] = df[zipcols].replace("0","")
-    return df
 
     
 def dates(df,file):

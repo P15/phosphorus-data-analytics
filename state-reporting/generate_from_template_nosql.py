@@ -143,6 +143,17 @@ def oklahoma(df):
     df["Patient_gender"] = ["Female" if x == "F" else "Unknown" for x in df["Patient_gender"]]
     return df
 
+def utah(df):
+    df['state'] = 'Utah'
+    df["birth_sex"] = ["Male" if x == "M" else x for x in df["birth_sex"]]
+    df["birth_sex"] = ["Female" if x == "F" else "Unknown" for x in df["birth_sex"]]
+    df["ethnicity"] = ["Unknown" if race=="Unknown" else "Not Hispanic or Latino" for race in df["ethnicity"]]
+    df["race"] = ["Unknown" if race=="Other" else race for race in df["race"]]
+    df["organism"] = "Novel Coronavirus (SARS-CoV-2)"
+    df["test_type"] = "Phosphorus Diagnostics COVID-19 RT-qPCR Test"
+    df["test_results"] = ["Positive / Reactive" if result.lower()=="positive" else "Negative / Non-reactive"  for result in df["test_results"]]
+    df["test_status"] = "Final"
+    return df
 
     
 def split_area_code(df, state):
@@ -262,7 +273,7 @@ def reformat(df, state, phoneform, dateform, fax=False):
         elif state.upper() == 'ID':
             df["Patient Race"] = df["Patient Race"].fillna("asked but unknown")
         elif state.upper() == 'UT':
-            df['state'] = 'Utah'
+            df = utah(df)
         elif state.upper() not in ["DC","ND"]:
             df = abbrev_race(df, state)
         
