@@ -149,6 +149,7 @@ def utah(df):
     df["birth_sex"] = ["Female" if x == "F" else "Unknown" for x in df["birth_sex"]]
     df["ethnicity"] = ["Unknown" if race=="Unknown" else "Not Hispanic or Latino" for race in df["ethnicity"]]
     df["race"] = ["Unknown" if race=="Other" else race for race in df["race"]]
+    df["race"] = ["White" if race=="European" else race for race in df["race"]]
     df["organism"] = "Novel Coronavirus (SARS-CoV-2)"
     df["test_type"] = "Phosphorus Diagnostics COVID-19 RT-qPCR Test"
     df["test_results"] = ["Positive / Reactive" if result.lower()=="positive" else "Negative / Non-reactive"  for result in df["test_results"]]
