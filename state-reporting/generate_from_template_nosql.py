@@ -242,7 +242,7 @@ def unique_codes(df, state):
     if state == "MO":
         df["Specimen_Source"]="OT"
     
-    if state == "NJ":
+    if state in ["CA","NJ"]:
         df["PATIENT_RACE"] = "2131-1"
         df = df.apply(lambda x: x.astype(str).str.upper())
         df = df.replace("NAN",np.nan)
