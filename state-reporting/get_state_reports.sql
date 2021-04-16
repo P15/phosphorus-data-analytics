@@ -12,8 +12,8 @@ with dist_and_sub_dists as (
              left join locations on r.patient_user_id = locations.patient_user_id
     where r.cached_distributor_id in (select id from dist_and_sub_dists)
 --     and r.id not in (select report_id from sent_report_ids)
-      AND r.sent_date >= '{}'
-      AND r.sent_date <= '{}'
+      AND r.sent_date AT TIME ZONE 'UTC' AT TIME ZONE 'EDT' >= '{}'
+      AND r.sent_date AT TIME ZONE 'UTC' AT TIME ZONE 'EDT' <= '{}'
       and locations.state = '{}'
       and r.status in ('approved', 'sent', 'sent_to_patient', 'consultation_pending')
       and r.report_type_id = 283

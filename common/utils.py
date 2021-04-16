@@ -10,6 +10,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 import numpy as np
 import psycopg2
+import yagmail
 
 
 
@@ -83,7 +84,7 @@ def liststringsearch(alist,astring):
         if astring in element:
             return element
 
-def trymany(func, *args, timestotry=3):
+def trymany(func, *args, timestotry=3,email=False):
     errorcount = 0
     while errorcount < timestotry:
         try:
@@ -95,6 +96,23 @@ def trymany(func, *args, timestotry=3):
             errorcount = errorcount + 1
             print("Failed {} {} time(s) due to: {}".format(func.__name__, errorcount, e))
             continue
+    if email:
+        if errorcount == timestotry:
+            user = 'jacob@phosphorus.com'
+            app_password = os.environ["gmail_app_pass"]
+    
+            to = "jacob@phosphorus.com"
+            
+            subject = 'Failure to run function {}'.format(func.__name__)
+            message = """
+                        {} update failed at {}
+                        
+            """.format(func.__name__,datetime.now())
+            with yagmail.SMTP(user, app_password) as yag:
+                yag.send(to, subject, message)
+                print("Email sent at {}".format(datetime.now()))
+            print("Failed at {}".format(datetime.now()))
+        input("Press enter/return to close...")
         
 ###########################################################
 def execute_sql(conn, *argv):
