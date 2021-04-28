@@ -75,13 +75,13 @@ with dist_and_sub_dists as (
                  R.REPORT_TYPE_ID AS "Test Code",
                  RT.NAME AS "Test Name",
                  CASE
-                     when s.collection_type = 'Saliva' then '95425-5'
-                     when s.collection_type = 'Swab' then '94533-7'
+                     when s.collection_type ilike '%Saliva%' then '95425-5'
+                     when s.collection_type ilike '%Swab%' then '94533-7'
                      end
                      AS "LOINC Code",
                  CASE
-                     when s.collection_type = 'Saliva' then 'SARS-CoV-2 (COVID-19) N gene [Presence] in Saliva (oral fluid) by NAA with probe detection'
-                     when s.collection_type = 'Swab' then 'SARS-CoV-2 (COVID-19) N gene [Presence] in Respiratory specimen by NAA with probe detection'
+                     when s.collection_type ilike '%Saliva%' then 'SARS-CoV-2 (COVID-19) N gene [Presence] in Saliva (oral fluid) by NAA with probe detection'
+                     when s.collection_type ilike '%Swab%' then 'SARS-CoV-2 (COVID-19) N gene [Presence] in Respiratory specimen by NAA with probe detection'
                      end
                      AS "LOINC Description",
                
@@ -193,8 +193,8 @@ with dist_and_sub_dists as (
                  S.COLLECTION_DATE AS "Collection Date and Time",
                  S.COLLECTION_TYPE AS "Specimen Type",
                  CASE
-                     when s.collection_type = 'Saliva' then 'Pharyngeal structure'
-                     when s.collection_type = 'Swab' then 'Nasopharyngeal structure'
+                     when s.collection_type ilike '%Saliva%' then 'Pharyngeal structure'
+                     when s.collection_type ilike '%Swab%' then 'Nasopharyngeal structure'
                      end
                  AS "Specimen Source/Site",
                  NULL AS "Notes",
@@ -223,16 +223,16 @@ with dist_and_sub_dists as (
 		r.id as "Report ID",
 		'XX' as "Patient Identifier Type",
                  CASE
-                     when s.collection_type = 'Saliva' then '119342007'
-                     when s.collection_type = 'Swab' then '258500001'
+                     when s.collection_type ilike '%Saliva%' then '119342007'
+                     when s.collection_type ilike '%Swab%' then '258500001'
 			else '119342007'
                      end
                  AS "Specimen Source/Site SNOMED",
 		'SCT' as "SCT",
 
                  CASE
-                     when s.collection_type = 'Saliva' then '54066008'
-                     when s.collection_type = 'Swab' then '71836000'
+                     when s.collection_type ilike '%Saliva%' then '54066008'
+                     when s.collection_type ilike '%Swab%' then '71836000'
 			else '54066008'
                      end
                  AS "Specimen Source/Site SNOMED (Alternative)",
@@ -259,7 +259,7 @@ with dist_and_sub_dists as (
              left JOIN PRACTITIONERS PR ON PU.practitioner_id = PR.id
              left JOIN report_specimens RS ON RS.report_id = R.ID
              join samples s on RS.sample_id = s.id
-    where s.collection_type IN ('Saliva','Swab')
+    where (s.collection_type ilike '%Saliva%' or s.collection_type ilike '%Swab%')
     group by
         R.RESULT,
         R.SENT_DATE,
